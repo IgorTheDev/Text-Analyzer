@@ -1,24 +1,54 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { accounts, transactions, categories, getCategory, getAccount } from "@/lib/mockData";
+import { useData } from "@/lib/dataContext";
 import { format, subDays } from "date-fns";
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, Activity } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-
 import { ru } from "date-fns/locale";
 
-// Mock chart data
-const chartData = Array.from({ length: 7 }).map((_, i) => ({
-  name: format(subDays(new Date(), 6 - i), "EEE", { locale: ru }),
-  expenses: Math.floor(Math.random() * 200) + 50,
-  income: Math.floor(Math.random() * 100),
-}));
-
 export default function Dashboard() {
+  const { transactions, accounts, categories } = useData();
+
+  // Calculate real metrics
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const monthlyExpenses = 2450.00; // Mock value
-  const monthlyIncome = 5200.00;   // Mock value
-  const savingsRate = ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
+  
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const monthlyTransactions = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const monthlyExpenses = monthlyTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const monthlyIncome = monthlyTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
+
+  // Chart data based on last 7 days transactions
+  const chartData = Array.from({ length: 7 }).map((_, i) => {
+    const d = subDays(new Date(), 6 - i);
+    const dayStr = format(d, "yyyy-MM-dd");
+    const dayName = format(d, "EEE", { locale: ru });
+    
+    const dayTx = transactions.filter(t => t.date === dayStr);
+    const expenses = dayTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const income = dayTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      name: dayName,
+      expenses,
+      income
+    };
+  });
+
+  const getCategory = (id?: string) => categories.find(c => c.id === id);
+  const getAccount = (id: string) => accounts.find(a => a.id === id);
 
   return (
     <AppLayout>
@@ -36,7 +66,7 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-heading">${totalBalance.toLocaleString()}</div>
+              <div className="text-2xl font-bold font-heading">{totalBalance.toLocaleString()} ₽</div>
               <p className="text-xs text-muted-foreground mt-1">
                 +2.5% к прошлому месяцу
               </p>
@@ -49,7 +79,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-heading text-emerald-600">
-                +${monthlyIncome.toLocaleString()}
+                +{monthlyIncome.toLocaleString()} ₽
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 В планах на этот месяц
@@ -63,7 +93,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-heading text-rose-600">
-                -${monthlyExpenses.toLocaleString()}
+                -{monthlyExpenses.toLocaleString()} ₽
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 12% меньше, чем в прошлом месяце
@@ -201,7 +231,7 @@ export default function Dashboard() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">{acc.name}</p>
                     <h3 className={`text-2xl font-bold font-heading ${acc.balance < 0 ? 'text-rose-600' : 'text-foreground'}`}>
-                      ${acc.balance.toLocaleString()}
+                      {acc.balance.toLocaleString()} ₽
                     </h3>
                   </div>
                 </CardContent>

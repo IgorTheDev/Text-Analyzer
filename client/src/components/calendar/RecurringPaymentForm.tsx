@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { useData } from "@/lib/dataContext";
+import { RecurringPayment } from "@/lib/mockData";
 
 const formSchema = z.object({
   name: z.string().min(2, "Введите название"),
@@ -23,28 +25,60 @@ const formSchema = z.object({
   type: z.enum(["payment", "debt", "loan"]),
 });
 
-export function RecurringPaymentForm({ onSuccess }: { onSuccess?: () => void }) {
+type Props = {
+  onSuccess?: () => void;
+  initialData?: RecurringPayment;
+};
+
+export function RecurringPaymentForm({ onSuccess, initialData }: Props) {
   const [isLoading, setIsLoading] = useState(false);
+  const { addRecurringPayment, updateRecurringPayment } = useData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      amount: "",
-      frequency: "monthly",
-      startDate: new Date().toISOString().split('T')[0],
-      type: "payment",
+      name: initialData?.name || "",
+      amount: initialData?.amount.toString() || "",
+      frequency: initialData?.frequency || "monthly",
+      startDate: initialData?.startDate || new Date().toISOString().split('T')[0],
+      type: initialData?.type || "payment",
     },
   });
+
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        amount: initialData.amount.toString(),
+        frequency: initialData.frequency,
+        startDate: initialData.startDate,
+        type: initialData.type,
+      });
+    }
+  }, [initialData, form]);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
-      console.log("New Recurring Payment:", values);
+      const paymentData = {
+        name: values.name,
+        amount: parseFloat(values.amount),
+        frequency: values.frequency,
+        startDate: values.startDate,
+        type: values.type,
+      };
+
+      if (initialData) {
+        updateRecurringPayment(initialData.id, paymentData);
+      } else {
+        addRecurringPayment(paymentData);
+      }
+      
       setIsLoading(false);
       if (onSuccess) onSuccess();
-    }, 1000);
+    }, 500);
   }
 
   return (
@@ -96,7 +130,7 @@ export function RecurringPaymentForm({ onSuccess }: { onSuccess?: () => void }) 
                 <FormLabel>Сумма</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-2.5 text-muted-foreground">₽</span>
                     <Input placeholder="0.00" {...field} className="pl-7" type="number" step="0.01" />
                   </div>
                 </FormControl>
@@ -149,7 +183,7 @@ export function RecurringPaymentForm({ onSuccess }: { onSuccess?: () => void }) 
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Сохранение...
             </>
           ) : (
-            "Добавить платеж"
+            initialData ? "Сохранить изменения" : "Добавить платеж"
           )}
         </Button>
       </form>

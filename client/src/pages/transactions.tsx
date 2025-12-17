@@ -1,17 +1,16 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { transactions, categories, getCategory, getAccount } from "@/lib/mockData";
+import { useData } from "@/lib/dataContext";
 import { format } from "date-fns";
 import { Search, Filter, Download, Plus } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { useToast } from "@/hooks/use-toast";
-
 import { ru } from "date-fns/locale";
 
 export default function Transactions() {
@@ -19,6 +18,7 @@ export default function Transactions() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
   const { toast } = useToast();
+  const { transactions, categories, accounts } = useData();
 
   const handleTxSuccess = () => {
     setIsNewTxOpen(false);
@@ -27,6 +27,9 @@ export default function Transactions() {
       description: "Ваша операция была успешно сохранена.",
     });
   };
+
+  const getCategory = (id?: string) => categories.find(c => c.id === id);
+  const getAccount = (id: string) => accounts.find(a => a.id === id);
 
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());

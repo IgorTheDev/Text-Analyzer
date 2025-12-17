@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { categories, accounts } from "@/lib/mockData";
+import { useData } from "@/lib/dataContext";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -27,6 +27,7 @@ const formSchema = z.object({
 
 export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
+  const { addTransaction, accounts, categories } = useData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,10 +45,17 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
-      console.log(values);
+      addTransaction({
+        description: values.description,
+        amount: parseFloat(values.amount),
+        type: values.type,
+        categoryId: values.categoryId,
+        accountId: values.accountId,
+        date: values.date,
+      });
       setIsLoading(false);
       if (onSuccess) onSuccess();
-    }, 1000);
+    }, 500);
   }
 
   const type = form.watch("type");
@@ -87,7 +95,7 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
                 <FormLabel>Сумма</FormLabel>
                 <FormControl>
                   <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                    <span className="absolute left-3 top-2.5 text-muted-foreground">₽</span>
                     <Input placeholder="0.00" {...field} className="pl-7" type="number" step="0.01" />
                   </div>
                 </FormControl>
