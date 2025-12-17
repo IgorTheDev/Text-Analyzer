@@ -1,0 +1,213 @@
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { accounts, transactions, categories, getCategory, getAccount } from "@/lib/mockData";
+import { format, subDays } from "date-fns";
+import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, Activity } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+
+// Mock chart data
+const chartData = Array.from({ length: 7 }).map((_, i) => ({
+  name: format(subDays(new Date(), 6 - i), "EEE"),
+  expenses: Math.floor(Math.random() * 200) + 50,
+  income: Math.floor(Math.random() * 100),
+}));
+
+export default function Dashboard() {
+  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const monthlyExpenses = 2450.00; // Mock value
+  const monthlyIncome = 5200.00;   // Mock value
+  const savingsRate = ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
+
+  return (
+    <AppLayout>
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Welcome back, here's your financial overview.</p>
+        </div>
+
+        {/* Key Metrics Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-heading">${totalBalance.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +2.5% from last month
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-heading text-emerald-600">
+                +${monthlyIncome.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                On track for this month
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-rose-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-heading text-rose-600">
+                -${monthlyExpenses.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                12% less than last month
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
+              <Activity className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-heading text-blue-600">
+                {savingsRate.toFixed(1)}%
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Target: 20%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts & Recent Activity */}
+        <div className="grid gap-4 md:grid-cols-7">
+          {/* Main Chart */}
+          <Card className="col-span-4">
+            <CardHeader>
+              <CardTitle>Cash Flow</CardTitle>
+              <CardDescription>Income vs Expenses over the last 7 days</CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#888888" 
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false} 
+                    />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      itemStyle={{ fontSize: '12px' }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="income" 
+                      stroke="#10b981" 
+                      strokeWidth={2}
+                      fillOpacity={1} 
+                      fill="url(#colorIncome)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="expenses" 
+                      stroke="#ef4444" 
+                      strokeWidth={2}
+                      fillOpacity={1} 
+                      fill="url(#colorExpenses)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Recent Transactions */}
+          <Card className="col-span-3">
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>Latest 5 transactions across all accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {transactions.slice(0, 5).map((t) => {
+                  const category = getCategory(t.categoryId);
+                  const account = getAccount(t.accountId);
+                  const isExpense = t.type === 'expense';
+                  
+                  return (
+                    <div key={t.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                          style={{ backgroundColor: category?.color || '#94a3b8' }}
+                        >
+                          {/* Use first letter of category or fallback */}
+                          {category?.name?.[0] || 'T'}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium leading-none">{t.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(t.date), "MMM d")} • {account?.name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`font-medium text-sm ${isExpense ? 'text-foreground' : 'text-emerald-600'}`}>
+                        {isExpense ? '-' : '+'}${t.amount.toFixed(2)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Accounts Summary */}
+        <div>
+          <h2 className="text-xl font-heading font-semibold mb-4">Your Accounts</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {accounts.map(acc => (
+              <Card key={acc.id} className="bg-card hover:border-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 rounded-lg bg-secondary">
+                      {acc.type === 'credit' ? <CreditCard className="h-5 w-5 text-foreground" /> : <Wallet className="h-5 w-5 text-foreground" />}
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${acc.balance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {acc.type === 'credit' ? 'Credit' : 'Active'}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">{acc.name}</p>
+                    <h3 className={`text-2xl font-bold font-heading ${acc.balance < 0 ? 'text-rose-600' : 'text-foreground'}`}>
+                      ${acc.balance.toLocaleString()}
+                    </h3>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}
