@@ -19,11 +19,11 @@ export default function Budget() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-foreground">Budget Plan</h1>
-            <p className="text-muted-foreground mt-1">Track your monthly spending limits.</p>
+            <h1 className="text-3xl font-heading font-bold text-foreground">Бюджет</h1>
+            <p className="text-muted-foreground mt-1">Контроль ежемесячных лимитов.</p>
           </div>
           <Button className="gap-2">
-            <Pencil className="h-4 w-4" /> Edit Budget
+            <Pencil className="h-4 w-4" /> Изменить
           </Button>
         </div>
 
@@ -43,7 +43,7 @@ export default function Budget() {
                       <CardTitle className="flex items-center gap-2 text-lg">
                         {cat.name}
                       </CardTitle>
-                      <CardDescription>Monthly Limit: ${limit}</CardDescription>
+                      <CardDescription>Лимит на месяц: ${limit}</CardDescription>
                     </div>
                     {isOverBudget ? (
                       <AlertTriangle className="h-5 w-5 text-rose-500" />
@@ -54,7 +54,7 @@ export default function Budget() {
                 </CardHeader>
                 <CardContent className="pb-2">
                   <div className="mb-2 flex justify-between text-sm font-medium">
-                    <span>${spent} spent</span>
+                    <span>${spent} потрачено</span>
                     <span className={isOverBudget ? "text-rose-600" : "text-muted-foreground"}>
                       {percentage.toFixed(0)}%
                     </span>
@@ -69,9 +69,9 @@ export default function Budget() {
                 </CardContent>
                 <CardFooter className="pt-2 text-xs text-muted-foreground">
                   {isOverBudget ? (
-                    <span className="text-rose-600 font-medium">You've exceeded your budget by ${spent - limit}</span>
+                    <span className="text-rose-600 font-medium">Превышение бюджета на ${spent - limit}</span>
                   ) : (
-                    <span>${limit - spent} remaining this month</span>
+                    <span>${limit - spent} осталось в этом месяце</span>
                   )}
                 </CardFooter>
               </Card>
@@ -83,20 +83,20 @@ export default function Budget() {
         <Card className="bg-primary text-primary-foreground border-none">
           <CardContent className="p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="space-y-2">
-              <h3 className="text-2xl font-heading font-bold">Total Budget Status</h3>
+              <h3 className="text-2xl font-heading font-bold">Общий статус бюджета</h3>
               <p className="text-primary-foreground/80 max-w-md">
-                You have spent 72% of your total allocated budget for this month. 
-                Keep it up to reach your savings goals!
+                Вы потратили 72% от общего бюджета на этот месяц. 
+                Так держать, чтобы достичь целей по сбережениям!
               </p>
             </div>
             <div className="flex items-center gap-4 bg-white/10 p-4 rounded-xl backdrop-blur-sm">
               <div className="text-center">
-                <div className="text-sm opacity-80">Total Limit</div>
+                <div className="text-sm opacity-80">Общий лимит</div>
                 <div className="text-xl font-bold">$3,450</div>
               </div>
               <div className="w-px h-8 bg-white/20"></div>
               <div className="text-center">
-                <div className="text-sm opacity-80">Total Spent</div>
+                <div className="text-sm opacity-80">Всего потрачено</div>
                 <div className="text-xl font-bold">$2,480</div>
               </div>
             </div>

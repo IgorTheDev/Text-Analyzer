@@ -7,6 +7,8 @@ import { useState } from "react";
 import { transactions } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
+import { ru } from "date-fns/locale";
+
 export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -20,9 +22,9 @@ export default function Calendar() {
 
   // Simple mock schedule for recurring payments
   const scheduledPayments = [
-    { id: "s1", day: 1, name: "Rent", amount: 1200, color: "#8b5cf6" },
+    { id: "s1", day: 1, name: "Аренда", amount: 1200, color: "#8b5cf6" },
     { id: "s2", day: 15, name: "Netflix", amount: 15, color: "#ec4899" },
-    { id: "s3", day: 25, name: "Internet", amount: 90, color: "#6366f1" },
+    { id: "s3", day: 25, name: "Интернет", amount: 90, color: "#6366f1" },
   ];
 
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
@@ -33,12 +35,12 @@ export default function Calendar() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-foreground">Calendar</h1>
-            <p className="text-muted-foreground mt-1">View upcoming bills and payment history.</p>
+            <h1 className="text-3xl font-heading font-bold text-foreground">Календарь</h1>
+            <p className="text-muted-foreground mt-1">Предстоящие платежи и история.</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="w-32 text-center font-medium text-lg">{format(currentMonth, "MMMM yyyy")}</span>
+            <span className="w-32 text-center font-medium text-lg capitalize">{format(currentMonth, "LLLL yyyy", { locale: ru })}</span>
             <Button variant="outline" size="icon" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
           </div>
         </div>
@@ -46,7 +48,7 @@ export default function Calendar() {
         <Card className="flex-1 flex flex-col min-h-[600px] shadow-sm">
           <CardHeader className="pb-2 border-b">
             <div className="grid grid-cols-7 text-center text-sm font-semibold text-muted-foreground">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              {['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'].map(day => (
                 <div key={day} className="py-2">{day}</div>
               ))}
             </div>

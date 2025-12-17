@@ -17,12 +17,12 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
-  description: z.string().min(2, "Description is required"),
-  amount: z.string().min(1, "Amount is required"), // using string for input handling then parsing
+  description: z.string().min(2, "Введите описание"),
+  amount: z.string().min(1, "Введите сумму"), // using string for input handling then parsing
   type: z.enum(["expense", "income", "transfer"]),
   categoryId: z.string().optional(),
-  accountId: z.string().min(1, "Account is required"),
-  date: z.string().min(1, "Date is required"),
+  accountId: z.string().min(1, "Выберите счет"),
+  date: z.string().min(1, "Выберите дату"),
 });
 
 export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
@@ -60,17 +60,17 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Type</FormLabel>
+              <FormLabel>Тип</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder="Выберите тип" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
+                  <SelectItem value="expense">Расход</SelectItem>
+                  <SelectItem value="income">Доход</SelectItem>
+                  <SelectItem value="transfer">Перевод</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -84,7 +84,7 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Amount</FormLabel>
+                <FormLabel>Сумма</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
@@ -101,7 +101,7 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date</FormLabel>
+                <FormLabel>Дата</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -116,9 +116,9 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Описание</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Grocery Store" {...field} />
+                <Input placeholder="напр. Супермаркет" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -131,11 +131,11 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
             name="categoryId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
+                <FormLabel>Категория</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Выберите категорию" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -162,11 +162,11 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account</FormLabel>
+              <FormLabel>Счет</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select account" />
+                    <SelectValue placeholder="Выберите счет" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -183,10 +183,10 @@ export function TransactionForm({ onSuccess }: { onSuccess?: () => void }) {
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Сохранение...
             </>
           ) : (
-            "Save Transaction"
+            "Сохранить"
           )}
         </Button>
       </form>

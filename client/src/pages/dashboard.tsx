@@ -5,9 +5,11 @@ import { format, subDays } from "date-fns";
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, Activity } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 
+import { ru } from "date-fns/locale";
+
 // Mock chart data
 const chartData = Array.from({ length: 7 }).map((_, i) => ({
-  name: format(subDays(new Date(), 6 - i), "EEE"),
+  name: format(subDays(new Date(), 6 - i), "EEE", { locale: ru }),
   expenses: Math.floor(Math.random() * 200) + 50,
   income: Math.floor(Math.random() * 100),
 }));
@@ -22,27 +24,27 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Welcome back, here's your financial overview.</p>
+          <h1 className="text-3xl font-heading font-bold text-foreground">Главная</h1>
+          <p className="text-muted-foreground mt-1">С возвращением! Вот обзор ваших финансов.</p>
         </div>
 
         {/* Key Metrics Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+              <CardTitle className="text-sm font-medium">Общий баланс</CardTitle>
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-heading">${totalBalance.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                +2.5% from last month
+                +2.5% к прошлому месяцу
               </p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+              <CardTitle className="text-sm font-medium">Доход за месяц</CardTitle>
               <ArrowUpRight className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
@@ -50,13 +52,13 @@ export default function Dashboard() {
                 +${monthlyIncome.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                On track for this month
+                В планах на этот месяц
               </p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+              <CardTitle className="text-sm font-medium">Расходы за месяц</CardTitle>
               <ArrowDownRight className="h-4 w-4 text-rose-500" />
             </CardHeader>
             <CardContent>
@@ -64,13 +66,13 @@ export default function Dashboard() {
                 -${monthlyExpenses.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                12% less than last month
+                12% меньше, чем в прошлом месяце
               </p>
             </CardContent>
           </Card>
           <Card className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Savings Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">Норма сбережений</CardTitle>
               <Activity className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
@@ -78,7 +80,7 @@ export default function Dashboard() {
                 {savingsRate.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Target: 20%
+                Цель: 20%
               </p>
             </CardContent>
           </Card>
@@ -89,8 +91,8 @@ export default function Dashboard() {
           {/* Main Chart */}
           <Card className="col-span-4">
             <CardHeader>
-              <CardTitle>Cash Flow</CardTitle>
-              <CardDescription>Income vs Expenses over the last 7 days</CardDescription>
+              <CardTitle>Денежный поток</CardTitle>
+              <CardDescription>Доходы и расходы за последние 7 дней</CardDescription>
             </CardHeader>
             <CardContent className="pl-2">
               <div className="h-[300px] w-full">
@@ -143,8 +145,8 @@ export default function Dashboard() {
           {/* Recent Transactions */}
           <Card className="col-span-3">
             <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>Latest 5 transactions across all accounts</CardDescription>
+              <CardTitle>Последние операции</CardTitle>
+              <CardDescription>Последние 5 операций по всем счетам</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -166,7 +168,7 @@ export default function Dashboard() {
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">{t.description}</p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(t.date), "MMM d")} • {account?.name}
+                            {format(new Date(t.date), "d MMM", { locale: ru })} • {account?.name}
                           </p>
                         </div>
                       </div>
@@ -183,7 +185,7 @@ export default function Dashboard() {
 
         {/* Accounts Summary */}
         <div>
-          <h2 className="text-xl font-heading font-semibold mb-4">Your Accounts</h2>
+          <h2 className="text-xl font-heading font-semibold mb-4">Ваши счета</h2>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {accounts.map(acc => (
               <Card key={acc.id} className="bg-card hover:border-primary/50 transition-colors">
@@ -193,7 +195,7 @@ export default function Dashboard() {
                       {acc.type === 'credit' ? <CreditCard className="h-5 w-5 text-foreground" /> : <Wallet className="h-5 w-5 text-foreground" />}
                     </div>
                     <span className={`text-xs px-2 py-1 rounded-full ${acc.balance < 0 ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {acc.type === 'credit' ? 'Credit' : 'Active'}
+                      {acc.type === 'credit' ? 'Кредитный' : 'Активный'}
                     </span>
                   </div>
                   <div className="space-y-1">

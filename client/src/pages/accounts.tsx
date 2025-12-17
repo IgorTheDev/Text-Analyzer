@@ -10,11 +10,11 @@ export default function Accounts() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-foreground">Accounts</h1>
-            <p className="text-muted-foreground mt-1">Overview of your financial assets and liabilities.</p>
+            <h1 className="text-3xl font-heading font-bold text-foreground">Счета</h1>
+            <p className="text-muted-foreground mt-1">Обзор ваших финансовых активов и обязательств.</p>
           </div>
           <Button className="gap-2">
-            <Plus className="h-4 w-4" /> Add Account
+            <Plus className="h-4 w-4" /> Добавить счет
           </Button>
         </div>
 
@@ -33,19 +33,25 @@ export default function Accounts() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">{acc.name}</CardTitle>
-                    <CardDescription className="capitalize">{acc.type} Account</CardDescription>
+                    <CardDescription className="capitalize">
+                        {acc.type === 'credit' && 'Кредитный'}
+                        {acc.type === 'cash' && 'Наличные'}
+                        {acc.type === 'savings' && 'Сберегательный'}
+                        {acc.type === 'checking' && 'Расчетный'}
+                        {acc.type === 'investment' && 'Инвестиционный'}
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="mt-4">
-                    <p className="text-sm text-muted-foreground">Current Balance</p>
+                    <p className="text-sm text-muted-foreground">Текущий баланс</p>
                     <h3 className={`text-3xl font-heading font-bold ${acc.balance < 0 ? 'text-rose-600' : 'text-foreground'}`}>
                       ${acc.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </h3>
                   </div>
                   <div className="mt-6 flex gap-2">
-                    <Button variant="outline" size="sm" className="w-full">Edit</Button>
-                    <Button variant="outline" size="sm" className="w-full">History</Button>
+                    <Button variant="outline" size="sm" className="w-full">Изменить</Button>
+                    <Button variant="outline" size="sm" className="w-full">История</Button>
                   </div>
                 </CardContent>
               </Card>

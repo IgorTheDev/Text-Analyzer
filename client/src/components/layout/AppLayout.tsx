@@ -21,11 +21,11 @@ import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/" },
-  { label: "Transactions", icon: CreditCard, href: "/transactions" },
-  { label: "Budget", icon: Wallet, href: "/budget" },
-  { label: "Calendar", icon: CalendarDays, href: "/calendar" },
-  { label: "Accounts", icon: PieChart, href: "/accounts" },
+  { label: "Главная", icon: LayoutDashboard, href: "/" },
+  { label: "Транзакции", icon: CreditCard, href: "/transactions" },
+  { label: "Бюджет", icon: Wallet, href: "/budget" },
+  { label: "Календарь", icon: CalendarDays, href: "/calendar" },
+  { label: "Счета", icon: PieChart, href: "/accounts" },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -37,8 +37,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const handleTxSuccess = () => {
     setIsNewTxOpen(false);
     toast({
-      title: "Transaction added",
-      description: "Your transaction has been successfully recorded.",
+      title: "Операция добавлена",
+      description: "Ваша операция была успешно сохранена.",
     });
   };
 
@@ -55,14 +55,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <Dialog open={isNewTxOpen} onOpenChange={setIsNewTxOpen}>
           <DialogTrigger asChild>
             <Button className="w-full justify-start gap-2 mb-6 font-medium shadow-md" size="lg">
-              <Plus className="h-4 w-4" /> New Transaction
+              <Plus className="h-4 w-4" /> Новая операция
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Add Transaction</DialogTitle>
+              <DialogTitle>Добавить операцию</DialogTitle>
               <DialogDescription>
-                Record a new expense, income, or transfer.
+                Добавить новый расход, доход или перевод.
               </DialogDescription>
             </DialogHeader>
             <TransactionForm onSuccess={handleTxSuccess} />
@@ -104,7 +104,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive">
-          <LogOut className="h-4 w-4" /> Sign Out
+          <LogOut className="h-4 w-4" /> Выйти
         </Button>
       </div>
     </div>

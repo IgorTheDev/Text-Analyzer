@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { useToast } from "@/hooks/use-toast";
 
+import { ru } from "date-fns/locale";
+
 export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -21,8 +23,8 @@ export default function Transactions() {
   const handleTxSuccess = () => {
     setIsNewTxOpen(false);
     toast({
-      title: "Transaction added",
-      description: "Your transaction has been successfully recorded.",
+      title: "Операция добавлена",
+      description: "Ваша операция была успешно сохранена.",
     });
   };
 
@@ -37,25 +39,25 @@ export default function Transactions() {
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-heading font-bold text-foreground">Transactions</h1>
-            <p className="text-muted-foreground mt-1">Manage and track your family expenses.</p>
+            <h1 className="text-3xl font-heading font-bold text-foreground">Транзакции</h1>
+            <p className="text-muted-foreground mt-1">Управление расходами семьи.</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="gap-2">
-              <Download className="h-4 w-4" /> Export
+              <Download className="h-4 w-4" /> Экспорт
             </Button>
             
             <Dialog open={isNewTxOpen} onOpenChange={setIsNewTxOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
-                  <Plus className="h-4 w-4" /> Add Transaction
+                  <Plus className="h-4 w-4" /> Добавить
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Add Transaction</DialogTitle>
+                  <DialogTitle>Добавить операцию</DialogTitle>
                   <DialogDescription>
-                    Record a new expense, income, or transfer.
+                    Добавить новый расход, доход или перевод.
                   </DialogDescription>
                 </DialogHeader>
                 <TransactionForm onSuccess={handleTxSuccess} />
@@ -67,12 +69,12 @@ export default function Transactions() {
         <Card>
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <CardTitle>All Transactions</CardTitle>
+              <CardTitle>Все транзакции</CardTitle>
               <div className="flex items-center gap-2 w-full md:w-auto">
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input 
-                    placeholder="Search transactions..." 
+                    placeholder="Поиск..." 
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -82,11 +84,11 @@ export default function Transactions() {
                   <SelectTrigger className="w-[180px]">
                     <div className="flex items-center gap-2">
                       <Filter className="h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Category" />
+                      <SelectValue placeholder="Категория" />
                     </div>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="all">Все категории</SelectItem>
                     {categories.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
@@ -99,11 +101,11 @@ export default function Transactions() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Account</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Дата</TableHead>
+                  <TableHead>Описание</TableHead>
+                  <TableHead>Категория</TableHead>
+                  <TableHead>Счет</TableHead>
+                  <TableHead className="text-right">Сумма</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -116,7 +118,7 @@ export default function Transactions() {
                     return (
                       <TableRow key={t.id} className="group hover:bg-muted/50 transition-colors">
                         <TableCell className="font-medium text-muted-foreground">
-                          {format(new Date(t.date), "MMM d, yyyy")}
+                          {format(new Date(t.date), "d MMM yyyy", { locale: ru })}
                         </TableCell>
                         <TableCell className="font-medium">{t.description}</TableCell>
                         <TableCell>
@@ -125,7 +127,7 @@ export default function Transactions() {
                               className="w-2 h-2 rounded-full" 
                               style={{ backgroundColor: category?.color || '#94a3b8' }}
                             />
-                            <span className="text-sm">{category?.name || 'Uncategorized'}</span>
+                            <span className="text-sm">{category?.name || 'Без категории'}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{account?.name}</TableCell>
@@ -138,7 +140,7 @@ export default function Transactions() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      No results found.
+                      Ничего не найдено.
                     </TableCell>
                   </TableRow>
                 )}
