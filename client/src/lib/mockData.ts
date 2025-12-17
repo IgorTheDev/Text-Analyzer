@@ -50,6 +50,18 @@ export type Transaction = {
   createdById: string;
 };
 
+export type Frequency = "monthly" | "semi_annual" | "annual";
+
+export type RecurringPayment = {
+  id: string;
+  name: string;
+  amount: number;
+  frequency: Frequency;
+  startDate: string;
+  type: "payment" | "debt" | "loan";
+  color?: string;
+};
+
 // Mock Data
 export const currentUser: User = {
   id: "u1",
@@ -85,6 +97,15 @@ export const categories: Category[] = [
   { id: "c6", name: "Зарплата", type: "income", color: "#10b981", icon: "briefcase" },
   { id: "c7", name: "Фриланс", type: "income", color: "#34d399", icon: "laptop" },
   { id: "c8", name: "Коммуналка", type: "expense", color: "#6366f1", icon: "zap", budgetLimit: 200 },
+];
+
+export const recurringPayments: RecurringPayment[] = [
+  { id: "rp1", name: "Аренда", amount: 1200, frequency: "monthly", startDate: "2024-01-01", type: "payment", color: "#8b5cf6" },
+  { id: "rp2", name: "Netflix", amount: 15, frequency: "monthly", startDate: "2024-01-15", type: "payment", color: "#ec4899" },
+  { id: "rp3", name: "Интернет", amount: 90, frequency: "monthly", startDate: "2024-01-25", type: "payment", color: "#6366f1" },
+  { id: "rp4", name: "Кредит за авто", amount: 350, frequency: "monthly", startDate: "2024-02-10", type: "loan", color: "#f59e0b" },
+  { id: "rp5", name: "Страховка авто", amount: 1200, frequency: "annual", startDate: "2024-05-20", type: "payment", color: "#10b981" },
+  { id: "rp6", name: "Долг другу", amount: 5000, frequency: "semi_annual", startDate: "2024-03-01", type: "debt", color: "#ef4444" },
 ];
 
 const today = new Date();

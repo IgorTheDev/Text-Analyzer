@@ -2,15 +2,19 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, isSameDay, getDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, isSameDay, getDay, getDate, getMonth, addMonths as addMonthsFn } from "date-fns";
 import { useState } from "react";
-import { transactions } from "@/lib/mockData";
+import { transactions, recurringPayments, RecurringPayment } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
-
 import { ru } from "date-fns/locale";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RecurringPaymentForm } from "@/components/calendar/RecurringPaymentForm";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Calendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false);
+  const { toast } = useToast();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -20,15 +24,45 @@ export default function Calendar() {
   const startDayOfWeek = getDay(monthStart);
   const paddingDays = Array.from({ length: startDayOfWeek });
 
-  // Simple mock schedule for recurring payments
-  const scheduledPayments = [
-    { id: "s1", day: 1, name: "Аренда", amount: 1200, color: "#8b5cf6" },
-    { id: "s2", day: 15, name: "Netflix", amount: 15, color: "#ec4899" },
-    { id: "s3", day: 25, name: "Интернет", amount: 90, color: "#6366f1" },
-  ];
-
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+
+  const handlePaymentSuccess = () => {
+    setIsNewPaymentOpen(false);
+    toast({
+      title: "Платеж добавлен",
+      description: "Обязательный платеж успешно добавлен в календарь.",
+    });
+  };
+
+  // Helper to check if a recurring payment occurs on a specific date
+  const getRecurringForDay = (date: Date) => {
+    return recurringPayments.filter(rp => {
+      const start = new Date(rp.startDate);
+      const dayToCheck = getDate(date);
+      const monthToCheck = getMonth(date);
+      const startDay = getDate(start);
+      const startMonth = getMonth(start);
+
+      // Simple check: matches day of month
+      if (dayToCheck !== startDay) return false;
+
+      // Check start date is before or equal to current date
+      if (date < start) return false;
+
+      if (rp.frequency === 'monthly') {
+        return true;
+      } else if (rp.frequency === 'semi_annual') {
+        // Check if month difference is multiple of 6
+        const monthDiff = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth());
+        return monthDiff % 6 === 0;
+      } else if (rp.frequency === 'annual') {
+         // Check if month matches
+         return monthToCheck === startMonth;
+      }
+      return false;
+    });
+  };
 
   return (
     <AppLayout>
@@ -42,6 +76,23 @@ export default function Calendar() {
             <Button variant="outline" size="icon" onClick={prevMonth}><ChevronLeft className="h-4 w-4" /></Button>
             <span className="w-32 text-center font-medium text-lg capitalize">{format(currentMonth, "LLLL yyyy", { locale: ru })}</span>
             <Button variant="outline" size="icon" onClick={nextMonth}><ChevronRight className="h-4 w-4" /></Button>
+            
+            <Dialog open={isNewPaymentOpen} onOpenChange={setIsNewPaymentOpen}>
+              <DialogTrigger asChild>
+                <Button className="ml-4 gap-2">
+                  <Plus className="h-4 w-4" /> Платеж
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Добавить обязательный платеж</DialogTitle>
+                  <DialogDescription>
+                    Настройте регулярные платежи, кредиты или долги.
+                  </DialogDescription>
+                </DialogHeader>
+                <RecurringPaymentForm onSuccess={handlePaymentSuccess} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -63,7 +114,7 @@ export default function Calendar() {
               {/* Actual days */}
               {daysInMonth.map((day, i) => {
                 const dayTransactions = transactions.filter(t => isSameDay(new Date(t.date), day));
-                const dayScheduled = scheduledPayments.filter(s => s.day === day.getDate());
+                const dayScheduled = getRecurringForDay(day);
                 
                 return (
                   <div 
@@ -82,9 +133,10 @@ export default function Calendar() {
                     
                     <div className="space-y-1 flex-1 overflow-y-auto max-h-[120px] scrollbar-none">
                       {dayScheduled.map(s => (
-                        <div key={s.id} className="text-[10px] px-1.5 py-0.5 rounded-sm bg-opacity-20 truncate font-medium text-primary-foreground border-l-2 border-opacity-50"
-                             style={{ backgroundColor: s.color, borderColor: s.color }}>
-                          {s.name} ${s.amount}
+                        <div key={s.id} className="text-[10px] px-1.5 py-0.5 rounded-sm bg-opacity-20 truncate font-medium text-primary-foreground border-l-2 border-opacity-50 flex justify-between items-center"
+                             style={{ backgroundColor: s.color || '#6366f1', borderColor: s.color || '#6366f1' }}>
+                          <span className="truncate mr-1">{s.name}</span>
+                          <span>${s.amount}</span>
                         </div>
                       ))}
                       {dayTransactions.map(t => (
