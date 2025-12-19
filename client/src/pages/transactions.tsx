@@ -110,7 +110,9 @@ export default function Transactions() {
                   <TableHead>Описание</TableHead>
                   <TableHead>Категория</TableHead>
                   <TableHead>Счет</TableHead>
+                  <TableHead>Добавил</TableHead>
                   <TableHead className="text-right">Сумма</TableHead>
+                  <TableHead className="w-[100px]">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -136,8 +138,9 @@ export default function Transactions() {
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{account?.name}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{(t as any).createdByName || 'Неизвестный'}</TableCell>
                     <TableCell className={`text-right font-medium ${isExpense ? '' : 'text-emerald-600'}`}>
-                      {isExpense ? '-' : '+'}{account?.currency === 'RUB' ? '₽' : '$'}{t.amount.toFixed(2)}
+                      {isExpense ? '-' : '+'}{account?.currency === 'RUB' ? '₽' : '$'}{Number(t.amount).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">
@@ -173,13 +176,21 @@ export default function Transactions() {
                               <AlertDialogCancel>Отмена</AlertDialogCancel>
                               <AlertDialogAction
                                 className="bg-red-500 hover:bg-red-600"
-                                onClick={() => {
-                                  deleteTransaction(t.id);
-                                  toast({
-                                    title: "Операция удалена",
-                                    description: "Ваша операция была успешно удалена.",
-                                    variant: "destructive"
-                                  });
+                                onClick={async () => {
+                                  try {
+                                    await deleteTransaction(t.id);
+                                    toast({
+                                      title: "Операция удалена",
+                                      description: "Ваша операция была успешно удалена.",
+                                      variant: "destructive"
+                                    });
+                                  } catch (error) {
+                                    toast({
+                                      title: "Ошибка",
+                                      description: "Не удалось удалить операцию. Попробуйте еще раз.",
+                                      variant: "destructive"
+                                    });
+                                  }
                                 }}
                               >
                                 Удалить
@@ -194,7 +205,7 @@ export default function Transactions() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       Ничего не найдено.
                     </TableCell>
                   </TableRow>

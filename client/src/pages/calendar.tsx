@@ -50,15 +50,23 @@ export default function Calendar() {
       const startMonth = getMonth(start);
 
       if (dayToCheck !== startDay) return false;
-      if (date < start) return false;
+
+      // Normalize dates to start of day for comparison
+      const dateNormalized = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const startNormalized = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+
+      if (dateNormalized < startNormalized) return false;
 
       if (rp.frequency === 'monthly') {
+        // Monthly payments occur every month on the same day
         return true;
       } else if (rp.frequency === 'semi_annual') {
+        // Semi-annual payments occur every 6 months
         const monthDiff = (date.getFullYear() - start.getFullYear()) * 12 + (date.getMonth() - start.getMonth());
         return monthDiff % 6 === 0;
       } else if (rp.frequency === 'annual') {
-         return monthToCheck === startMonth;
+        // Annual payments occur every year on the same month and day
+        return monthToCheck === startMonth;
       }
       return false;
     });

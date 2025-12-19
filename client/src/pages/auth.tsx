@@ -100,7 +100,7 @@ export default function AuthPage() {
         return;
       }
 
-      const data = await fetchApi("/login", {
+      const data = await fetchApi("/api/login", {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
@@ -112,13 +112,19 @@ export default function AuthPage() {
         localStorage.removeItem("rememberedUsername");
       }
 
-      login({
+      console.log('=== LOGIN SUCCESSFUL ===');
+      console.log('User data:', data.user);
+
+      await login({
+        id: data.user.id,
         username: data.user.username,
         firstName: data.user.firstName,
         lastName: data.user.lastName,
         familyId: data.user.familyId,
         role: data.user.role,
       });
+
+      console.log('Login function completed, redirecting to /');
       setLocation("/");
       toast.success("Вход выполнен успешно!");
     } catch (error) {
@@ -178,19 +184,30 @@ export default function AuthPage() {
       // }
 
       // Register the user (invitation code handling is now in the register endpoint)
-      const data = await fetchApi("/register", {
+      const registerData: any = {
+        username,
+        password,
+        firstName,
+        lastName,
+      };
+
+      // Only include familyName if it's provided and not using invitation code
+      if (familyName.trim() && !invitationCode) {
+        registerData.familyName = familyName;
+      }
+
+      // Include invitation code if provided
+      if (invitationCode) {
+        registerData.invitationCode = invitationCode;
+      }
+
+      const data = await fetchApi("/api/register", {
         method: "POST",
-        body: JSON.stringify({
-          username,
-          password,
-          firstName,
-          lastName,
-          familyName: invitationCode ? null : familyName, // Don't create family if using invitation
-          invitationCode: invitationCode || null,
-        }),
+        body: JSON.stringify(registerData),
       });
 
-      login({
+      await login({
+        id: data.user.id,
         username: data.user.username,
         firstName: data.user.firstName,
         lastName: data.user.lastName,
@@ -198,8 +215,14 @@ export default function AuthPage() {
         role: data.user.role,
       });
 
-      setLocation("/");
-      toast.success("Регистрация успешна! Добро пожаловать!");
+      // Redirect to family page if user has no family, otherwise to dashboard
+      if (!data.user.familyId) {
+        setLocation("/family");
+        toast.success("Регистрация успешна! Теперь создайте семью или используйте код приглашения.");
+      } else {
+        setLocation("/");
+        toast.success("Регистрация успешна! Добро пожаловать!");
+      }
     } catch (error) {
       toast.error("Ошибка регистрации: " + (error instanceof Error ? error.message : "Unknown error"));
     }

@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Family, type InsertFamily, type FamilyInvitation, type InsertFamilyInvitation } from "@shared/schema";
+import { type User, type InsertUser, type Family, type InsertFamily, type FamilyInvitation, type InsertFamilyInvitation, type Category, type InsertCategory, type Account, type InsertAccount, type Transaction, type InsertTransaction, type RecurringPayment, type InsertRecurringPayment } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { PgStorage } from "./storage-pg";
 import { hashPassword } from "./auth";
@@ -12,6 +12,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
 
   // Family operations
   getFamily(id: string): Promise<Family | undefined>;
@@ -19,23 +20,61 @@ export interface IStorage {
   getFamiliesByUserId(userId: string): Promise<Family[]>;
   getFamilyMembers(familyId: string): Promise<User[]>;
 
+  // Account operations
+  getAccount(id: string): Promise<Account | undefined>;
+
   // Invitation operations
   createFamilyInvitation(invitation: InsertFamilyInvitation): Promise<FamilyInvitation>;
   getFamilyInvitationsByEmail(email: string): Promise<FamilyInvitation[]>;
   getFamilyInvitationsByFamilyId(familyId: string): Promise<FamilyInvitation[]>;
   updateFamilyInvitation(id: string, updates: Partial<FamilyInvitation>): Promise<FamilyInvitation | undefined>;
   getFamilyInvitationByCode(invitationCode: string): Promise<FamilyInvitation | undefined>;
+
+  // Category operations
+  createCategory(category: InsertCategory): Promise<Category>;
+  getCategoriesByFamilyId(familyId: string): Promise<Category[]>;
+  updateCategory(id: string, updates: Partial<Category>): Promise<Category | undefined>;
+  deleteCategory(id: string): Promise<boolean>;
+
+  // Account operations
+  createAccount(account: InsertAccount): Promise<Account>;
+  getAccountsByFamilyId(familyId: string): Promise<Account[]>;
+  updateAccount(id: string, updates: Partial<Account>): Promise<Account | undefined>;
+  deleteAccount(id: string): Promise<boolean>;
+
+  // Transaction operations
+  createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  getTransactionsByFamilyId(familyId: string): Promise<Transaction[]>;
+  getTransactionsByAccountId(accountId: string): Promise<Transaction[]>;
+  updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | undefined>;
+  deleteTransaction(id: string): Promise<boolean>;
+  deleteTransactionsByUserId(userId: string): Promise<number>;
+
+  // Recurring payment operations
+  createRecurringPayment(payment: InsertRecurringPayment): Promise<RecurringPayment>;
+  getRecurringPaymentsByFamilyId(familyId: string): Promise<RecurringPayment[]>;
+  updateRecurringPayment(id: string, updates: Partial<RecurringPayment>): Promise<RecurringPayment | undefined>;
+  deleteRecurringPayment(id: string): Promise<boolean>;
+  deleteRecurringPaymentsByUserId(userId: string): Promise<number>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private families: Map<string, Family>;
   private invitations: Map<string, FamilyInvitation>;
+  private categories: Map<string, Category>;
+  private accounts: Map<string, Account>;
+  private transactions: Map<string, Transaction>;
+  private recurringPayments: Map<string, RecurringPayment>;
 
   constructor() {
     this.users = new Map();
     this.families = new Map();
     this.invitations = new Map();
+    this.categories = new Map();
+    this.accounts = new Map();
+    this.transactions = new Map();
+    this.recurringPayments = new Map();
   }
 
   // User operations
@@ -80,6 +119,10 @@ export class MemStorage implements IStorage {
     const updatedUser = { ...user, ...processedUpdates, updatedAt: new Date() };
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
   }
 
   // Family operations
@@ -154,6 +197,170 @@ export class MemStorage implements IStorage {
     const updatedInvitation = { ...invitation, ...updates, updatedAt: new Date() };
     this.invitations.set(id, updatedInvitation);
     return updatedInvitation;
+  }
+
+  // Category operations
+  async createCategory(category: InsertCategory): Promise<Category> {
+    const id = randomUUID();
+    const newCategory: Category = {
+      ...category,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Category;
+    this.categories.set(id, newCategory);
+    return newCategory;
+  }
+
+  async getCategoriesByFamilyId(familyId: string): Promise<Category[]> {
+    return Array.from(this.categories.values()).filter(
+      (category) => category.familyId === familyId
+    );
+  }
+
+  async updateCategory(id: string, updates: Partial<Category>): Promise<Category | undefined> {
+    const category = this.categories.get(id);
+    if (!category) return undefined;
+
+    const updatedCategory = { ...category, ...updates, updatedAt: new Date() };
+    this.categories.set(id, updatedCategory);
+    return updatedCategory;
+  }
+
+  async deleteCategory(id: string): Promise<boolean> {
+    return this.categories.delete(id);
+  }
+
+  // Account operations
+  async getAccount(id: string): Promise<Account | undefined> {
+    return this.accounts.get(id);
+  }
+
+  async createAccount(account: InsertAccount): Promise<Account> {
+    const id = randomUUID();
+    const newAccount: Account = {
+      ...account,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Account;
+    this.accounts.set(id, newAccount);
+    return newAccount;
+  }
+
+  async getAccountsByFamilyId(familyId: string): Promise<Account[]> {
+    return Array.from(this.accounts.values()).filter(
+      (account) => account.familyId === familyId
+    );
+  }
+
+  async updateAccount(id: string, updates: Partial<Account>): Promise<Account | undefined> {
+    const account = this.accounts.get(id);
+    if (!account) return undefined;
+
+    const updatedAccount = { ...account, ...updates, updatedAt: new Date() };
+    this.accounts.set(id, updatedAccount);
+    return updatedAccount;
+  }
+
+  async deleteAccount(id: string): Promise<boolean> {
+    return this.accounts.delete(id);
+  }
+
+  // Transaction operations
+  async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
+    const id = randomUUID();
+    const newTransaction: Transaction = {
+      ...transaction,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Transaction;
+    this.transactions.set(id, newTransaction);
+    return newTransaction;
+  }
+
+  async getTransactionsByFamilyId(familyId: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.familyId === familyId
+    );
+  }
+
+  async getTransactionsByAccountId(accountId: string): Promise<Transaction[]> {
+    return Array.from(this.transactions.values()).filter(
+      (transaction) => transaction.accountId === accountId
+    );
+  }
+
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<Transaction | undefined> {
+    const transaction = this.transactions.get(id);
+    if (!transaction) return undefined;
+
+    const updatedTransaction = { ...transaction, ...updates, updatedAt: new Date() };
+    this.transactions.set(id, updatedTransaction);
+    return updatedTransaction;
+  }
+
+  async deleteTransaction(id: string): Promise<boolean> {
+    return this.transactions.delete(id);
+  }
+
+  async deleteTransactionsByUserId(userId: string): Promise<number> {
+    const transactionsToDelete = Array.from(this.transactions.values())
+      .filter(transaction => transaction.createdById === userId);
+
+    let deletedCount = 0;
+    for (const transaction of transactionsToDelete) {
+      if (this.transactions.delete(transaction.id)) {
+        deletedCount++;
+      }
+    }
+    return deletedCount;
+  }
+
+  // Recurring payment operations
+  async createRecurringPayment(payment: InsertRecurringPayment): Promise<RecurringPayment> {
+    const id = randomUUID();
+    const newPayment: RecurringPayment = {
+      ...payment,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as RecurringPayment;
+    this.recurringPayments.set(id, newPayment);
+    return newPayment;
+  }
+
+  async getRecurringPaymentsByFamilyId(familyId: string): Promise<RecurringPayment[]> {
+    return Array.from(this.recurringPayments.values()).filter(
+      (payment) => payment.familyId === familyId
+    );
+  }
+
+  async updateRecurringPayment(id: string, updates: Partial<RecurringPayment>): Promise<RecurringPayment | undefined> {
+    const payment = this.recurringPayments.get(id);
+    if (!payment) return undefined;
+
+    const updatedPayment = { ...payment, ...updates, updatedAt: new Date() };
+    this.recurringPayments.set(id, updatedPayment);
+    return updatedPayment;
+  }
+
+  async deleteRecurringPayment(id: string): Promise<boolean> {
+    return this.recurringPayments.delete(id);
+  }
+
+  async deleteRecurringPaymentsByUserId(userId: string): Promise<number> {
+    const paymentsToDelete = Array.from(this.recurringPayments.values())
+      .filter(payment => payment.createdById === userId);
+
+    let deletedCount = 0;
+    for (const payment of paymentsToDelete) {
+      if (this.recurringPayments.delete(payment.id)) {
+        deletedCount++;
+      }
+    }
+    return deletedCount;
   }
 }
 

@@ -12,7 +12,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export default function Budget() {
-  const { categories, transactions, updateCategoryLimit } = useData();
+  const { categories, transactions, updateCategoryLimit, addCategory, currentUser } = useData();
   const expenseCategories = categories.filter(c => c.type === 'expense');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [newLimit, setNewLimit] = useState<string>("");
@@ -29,24 +29,31 @@ export default function Budget() {
     return transactions
       .filter(t => {
         const d = new Date(t.date);
-        return t.categoryId === categoryId && 
+        return t.categoryId === categoryId &&
                t.type === 'expense' &&
-               d.getMonth() === currentMonth && 
+               d.getMonth() === currentMonth &&
                d.getFullYear() === currentYear;
       })
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum, t) => sum + Number(t.amount), 0);
   };
 
-  const totalBudget = expenseCategories.reduce((sum, c) => sum + (c.budgetLimit || 0), 0);
+  const totalBudget = expenseCategories.reduce((sum, c) => sum + (Number(c.budgetLimit) || 0), 0);
   const totalSpent = expenseCategories.reduce((sum, c) => sum + getSpending(c.id), 0);
   const totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-  const handleUpdateLimit = (id: string) => {
+  console.log('Total Budget:', totalBudget, 'Total Spent:', totalSpent, 'Percentage:', totalPercentage);
+
+  const handleUpdateLimit = async (id: string) => {
     const limit = parseFloat(newLimit);
     if (!isNaN(limit)) {
-      updateCategoryLimit(id, limit);
-      setEditingCategory(null);
-      setNewLimit("");
+      try {
+        await updateCategoryLimit(id, limit);
+        setEditingCategory(null);
+        setNewLimit("");
+        toast.success("Лимит обновлен");
+      } catch (error) {
+        toast.error("Не удалось обновить лимит");
+      }
     }
   };
 
@@ -105,9 +112,25 @@ export default function Budget() {
                     ))}
                   </div>
                 </div>
-                <Button onClick={() => {
-                  toast.success(`Категория "${newCategoryName}" добавлена`);
-                  setIsAddCategoryOpen(false);
+                <Button onClick={async () => {
+                  if (!newCategoryName.trim()) {
+                    toast.error("Введите название категории");
+                    return;
+                  }
+
+                  try {
+                    await addCategory({
+                      name: newCategoryName,
+                      type: newCategoryType as "expense" | "income",
+                      color: newCategoryColor,
+                      icon: "📁", // Default icon
+                    });
+                    toast.success(`Категория "${newCategoryName}" добавлена`);
+                    setNewCategoryName("");
+                    setIsAddCategoryOpen(false);
+                  } catch (error) {
+                    toast.error("Не удалось добавить категорию");
+                  }
                 }}>
                   Добавить категорию
                 </Button>
@@ -118,11 +141,11 @@ export default function Budget() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {expenseCategories.map(cat => {
-            const limit = cat.budgetLimit || 0;
+            const limit = Number(cat.budgetLimit) || 0;
             const spent = getSpending(cat.id);
             const percentage = limit > 0 ? (spent / limit) * 100 : 0;
             const isOverBudget = percentage > 100;
-            
+
             return (
               <Card key={cat.id} className={`overflow-hidden border-l-4`} style={{ borderLeftColor: cat.color }}>
                 <CardHeader className="pb-4">
@@ -131,7 +154,7 @@ export default function Budget() {
                       <CardTitle className="flex items-center gap-2 text-lg">
                         {cat.name}
                       </CardTitle>
-                      <CardDescription>Лимит: {limit} ₽</CardDescription>
+                      <CardDescription>Лимит: {Number(limit).toFixed(2)} ₽</CardDescription>
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -170,21 +193,21 @@ export default function Budget() {
                 </CardHeader>
                 <CardContent className="pb-2">
                   <div className="mb-2 flex justify-between text-sm font-medium">
-                    <span>{spent} ₽</span>
+                    <span>{Number(spent).toFixed(2)} ₽</span>
                     <span className={isOverBudget ? "text-rose-600" : "text-muted-foreground"}>
                       {percentage.toFixed(0)}%
                     </span>
                   </div>
-                  <Progress 
-                    value={Math.min(percentage, 100)} 
+                  <Progress
+                    value={Math.min(percentage, 100)}
                     className="h-2"
                   />
                 </CardContent>
                 <CardFooter className="pt-2 text-xs text-muted-foreground">
                   {isOverBudget ? (
-                    <span className="text-rose-600 font-medium">Превышение на {spent - limit} ₽</span>
+                    <span className="text-rose-600 font-medium">Превышение на {Number(spent - limit).toFixed(2)} ₽</span>
                   ) : (
-                    <span>{limit - spent} ₽ осталось</span>
+                    <span>{Number(limit - spent).toFixed(2)} ₽ осталось</span>
                   )}
                 </CardFooter>
               </Card>
@@ -204,15 +227,16 @@ export default function Budget() {
                   : "Так держать, вы укладываетесь в рамки!"}
               </p>
             </div>
-            <div className="flex items-center gap-4 bg-white/10 p-4 rounded-xl backdrop-blur-sm">
-              <div className="text-center">
-                <div className="text-sm opacity-80">Общий лимит</div>
-                <div className="text-xl font-bold">{totalBudget.toLocaleString()} ₽</div>
-              </div>
-              <div className="w-px h-8 bg-white/20"></div>
-              <div className="text-center">
-                <div className="text-sm opacity-80">Всего потрачено</div>
-                <div className="text-xl font-bold">{totalSpent.toLocaleString()} ₽</div>
+            <div className="bg-white/10 p-4 rounded-xl backdrop-blur-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-sm opacity-80">Общий лимит</div>
+                  <div className="text-xl font-bold">{Number(totalBudget).toFixed(2)} ₽</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-sm opacity-80">Всего потрачено</div>
+                  <div className="text-xl font-bold">{Number(totalSpent).toFixed(2)} ₽</div>
+                </div>
               </div>
             </div>
           </CardContent>

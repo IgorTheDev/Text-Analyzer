@@ -1,51 +1,56 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { fetchApi } from './api';
 import {
   Transaction,
   Account,
   Category,
   RecurringPayment,
-  transactions as initialTransactions,
-  accounts as initialAccounts,
-  categories as initialCategories,
-  recurringPayments as initialRecurringPayments,
-  currentUser as initialUser,
   User
 } from './mockData';
 
 // Smart categorization rules based on transaction descriptions
-const getSmartCategory = (description: string, amount: number): string => {
+const getSmartCategory = (description: string, amount: number, categories: Category[]): string | undefined => {
   const desc = description.toLowerCase();
 
-  // Expense categories
-  if (desc.includes('кафе') || desc.includes('ресторан') || desc.includes('макдоналд') || desc.includes('бургер') || desc.includes('пицца')) {
-    return 'c2'; // Кафе и рестораны
-  }
-  if (desc.includes('продукт') || desc.includes('магазин') || desc.includes('супермаркет') || desc.includes('пятерочка') || desc.includes('магнит')) {
-    return 'c1'; // Продукты
-  }
-  if (desc.includes('жкх') || desc.includes('коммунал') || desc.includes('электричество') || desc.includes('вода') || desc.includes('газ')) {
-    return 'c8'; // Коммуналка
-  }
-  if (desc.includes('транспорт') || desc.includes('метро') || desc.includes('автобус') || desc.includes('такси') || desc.includes('бензин')) {
-    return 'c4'; // Транспорт
-  }
-  if (desc.includes('развлечени') || desc.includes('кино') || desc.includes('концерт') || desc.includes('театр')) {
-    return 'c5'; // Развлечения
-  }
-  if (desc.includes('жилье') || desc.includes('аренда') || desc.includes('ипотека')) {
-    return 'c3'; // Жилье
-  }
+  // Find category by name patterns
+  for (const category of categories) {
+    const categoryName = category.name.toLowerCase();
 
-  // Income categories
-  if (desc.includes('зарплат') || desc.includes('salary')) {
-    return 'c6'; // Зарплата
-  }
-  if (desc.includes('фриланс') || desc.includes('freelance')) {
-    return 'c7'; // Фриланс
+    // Expense categories
+    if (category.type === 'expense') {
+      if (desc.includes('кафе') || desc.includes('ресторан') || desc.includes('макдоналд') || desc.includes('бургер') || desc.includes('пицца')) {
+        return category.id; // Кафе и рестораны
+      }
+      if (desc.includes('жкх') || desc.includes('коммунал') || desc.includes('электричество') || desc.includes('вода') || desc.includes('газ')) {
+        return category.id; // Коммуналка
+      }
+      if (desc.includes('транспорт') || desc.includes('метро') || desc.includes('автобус') || desc.includes('такси') || desc.includes('бензин') || desc.includes('заправка') || desc.includes('азс')) {
+        return category.id; // Транспорт
+      }
+      if (desc.includes('развлечени') || desc.includes('кино') || desc.includes('концерт') || desc.includes('театр')) {
+        return category.id; // Развлечения
+      }
+      if (desc.includes('жилье') || desc.includes('аренда') || desc.includes('ипотека')) {
+        return category.id; // Жилье
+      }
+      if (desc.includes('продукт') || desc.includes('магазин') || desc.includes('покупк')) {
+        return category.id; // Продукты
+      }
+    }
+
+    // Income categories
+    if (category.type === 'income') {
+      if (desc.includes('зарплат') || desc.includes('salary')) {
+        return category.id; // Зарплата
+      }
+      if (desc.includes('фриланс') || desc.includes('freelance')) {
+        return category.id; // Фриланс
+      }
+    }
   }
 
   // Default fallback based on amount
-  return amount > 0 ? 'c6' : 'c1'; // Default to salary for income, products for expenses
+  return undefined; // Let user select category manually if no match
 };
 
 type DataContextType = {
@@ -54,127 +59,307 @@ type DataContextType = {
   categories: Category[];
   recurringPayments: RecurringPayment[];
   currentUser: User | null;
-  addTransaction: (tx: Omit<Transaction, 'id' | 'createdById'>) => void;
-  updateTransaction: (id: string, updates: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
-  updateAccount: (id: string, updates: Partial<Account>) => void;
-  deleteAccount: (id: string) => void;
-  addAccount: (account: Omit<Account, 'id'>) => void;
-  updateCategoryLimit: (id: string, limit: number) => void;
-  addRecurringPayment: (payment: Omit<RecurringPayment, 'id'>) => void;
-  updateRecurringPayment: (id: string, updates: Partial<RecurringPayment>) => void;
-  deleteRecurringPayment: (id: string) => void;
-  login: (userData: { username: string; firstName?: string; lastName?: string; familyId?: string | null; role?: "admin" | "member" }) => void;
+  addTransaction: (tx: Omit<Transaction, 'id' | 'createdById'>) => Promise<void>;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  updateAccount: (id: string, updates: Partial<Account>) => Promise<void>;
+  deleteAccount: (id: string) => Promise<void>;
+  addAccount: (account: Omit<Account, 'id' | 'familyId'>) => Promise<void>;
+  addCategory: (category: Omit<Category, 'id' | 'familyId'>) => Promise<void>;
+  updateCategoryLimit: (id: string, limit: number) => Promise<void>;
+  addRecurringPayment: (payment: Omit<RecurringPayment, 'id'>) => Promise<void>;
+  updateRecurringPayment: (id: string, updates: Partial<RecurringPayment>) => Promise<void>;
+  deleteRecurringPayment: (id: string) => Promise<void>;
+  login: (userData: { id: string; username: string; firstName?: string | null; lastName?: string | null; familyId?: string | null; role?: "admin" | "member" }) => Promise<void>;
   logout: () => void;
 };
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
-  const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [recurringPayments, setRecurringPayments] = useState<RecurringPayment[]>(initialRecurringPayments);
-  const [currentUser, setCurrentUser] = useState<User | null>(null); // Start with no user to show auth page
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [recurringPayments, setRecurringPayments] = useState<RecurringPayment[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    // Try to restore user from localStorage
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      console.error('Failed to restore user from localStorage:', error);
+      return null;
+    }
+  });
 
-  const login = (userData: { username: string; firstName?: string; lastName?: string; familyId?: string | null; role?: "admin" | "member" }) => {
-    // Mock login with full user data
-    // Preserve existing data for the same user, but allow role and family updates
-    if (userData.username === currentUser?.username) {
-      // Same user logging in again, preserve their data but update role/family if changed
-      setCurrentUser({
-        ...currentUser,
-        familyId: userData.familyId || currentUser.familyId,
-        role: userData.role || currentUser.role,
-        firstName: userData.firstName || currentUser.firstName,
-        lastName: userData.lastName || currentUser.lastName,
-      });
+  const login = async (userData: { id: string; username: string; firstName?: string | null; lastName?: string | null; familyId?: string | null; role?: "admin" | "member" }) => {
+    console.log('=== LOGIN FUNCTION CALLED ===');
+    console.log('userData:', userData);
+    console.log('userData.familyId:', userData.familyId);
+    console.log('Boolean(userData.familyId):', Boolean(userData.familyId));
+
+    const user = {
+      id: userData.id,
+      username: userData.username,
+      avatar: '',
+      firstName: userData.firstName || '',
+      lastName: userData.lastName || '',
+      familyId: userData.familyId,
+      role: userData.role || 'member',
+    };
+
+    console.log('Created user object:', user);
+
+    setCurrentUser(user);
+    localStorage.setItem('currentUser', JSON.stringify(user));
+
+    // Load data from API if user has family
+    if (userData.familyId) {
+      console.log('User has family, loading data for familyId:', userData.familyId);
+      await loadData(userData.familyId);
     } else {
-      // New user logging in
-      setCurrentUser({
-        ...initialUser,
-        username: userData.username,
-        firstName: userData.firstName || initialUser.firstName,
-        lastName: userData.lastName || initialUser.lastName,
-        familyId: userData.familyId || initialUser.familyId,
-        role: userData.role || initialUser.role,
-      });
-      // For new users, keep existing demo data instead of clearing everything
-      // This maintains a consistent experience for testing
+      console.log('User has NO family, skipping data load');
+    }
+  };
+
+  const loadData = async (familyId: string) => {
+    try {
+      const [transactionsRes, accountsRes, categoriesRes, paymentsRes] = await Promise.all([
+        fetchApi(`/api/transactions/${familyId}`),
+        fetchApi(`/api/accounts/${familyId}`),
+        fetchApi(`/api/categories/${familyId}`),
+        fetchApi(`/api/recurring-payments/${familyId}`)
+      ]);
+
+      setTransactions(transactionsRes);
+      setAccounts(accountsRes);
+      setCategories(categoriesRes);
+      setRecurringPayments(paymentsRes);
+    } catch (error) {
+      console.error('Failed to load data:', error);
     }
   };
 
   const logout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('currentUser');
+    setTransactions([]);
+    setAccounts([]);
+    setCategories([]);
+    setRecurringPayments([]);
   };
 
-  const addTransaction = (txData: Omit<Transaction, 'id' | 'createdById'>) => {
-    // Smart categorization: automatically assign category if not provided
-    const categoryId = txData.categoryId || getSmartCategory(txData.description, txData.amount);
+  // Load data when user is restored from localStorage
+  useEffect(() => {
+    console.log('=== USEEFFECT: checking currentUser for data loading ===');
+    console.log('currentUser:', currentUser);
+    console.log('currentUser?.familyId:', currentUser?.familyId);
 
-    const newTx: Transaction = {
+    if (currentUser?.familyId) {
+      console.log('Loading data for restored user with familyId:', currentUser.familyId);
+      loadData(currentUser.familyId);
+    } else {
+      console.log('No familyId for restored user, skipping data load');
+    }
+  }, []);
+
+  const addTransaction = async (txData: Omit<Transaction, 'id' | 'createdById'>) => {
+    if (!currentUser?.familyId) return;
+
+    // Smart categorization: automatically assign category if not provided
+    const categoryId = txData.categoryId || getSmartCategory(txData.description, txData.amount, categories);
+
+    const payload = {
       ...txData,
       categoryId,
-      id: Math.random().toString(36).substr(2, 9),
-      createdById: currentUser?.id || 'u1',
+      familyId: currentUser.familyId,
+      createdById: currentUser.id,
     };
-    setTransactions(prev => [newTx, ...prev]);
 
-    // Update account balance
-    setAccounts(prev => prev.map(acc => {
-      if (acc.id === newTx.accountId) {
-        let newBalance = acc.balance;
-        if (newTx.type === 'expense') newBalance -= newTx.amount;
-        if (newTx.type === 'income') newBalance += newTx.amount;
-        // Transfer logic simplified for prototype
-        return { ...acc, balance: newBalance };
-      }
-      return acc;
-    }));
+    try {
+      const newTx = await fetchApi('/api/transactions', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      // Add createdByName to the transaction for immediate display
+      const transactionWithUser = {
+        ...newTx,
+        createdByName: currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username : 'Неизвестный'
+      };
+
+      setTransactions(prev => [transactionWithUser, ...prev]);
+
+      // Update account balance locally
+      setAccounts(prev => prev.map(acc => {
+        if (acc.id === newTx.accountId) {
+          let newBalance = Number(acc.balance);
+          if (newTx.type === 'expense') newBalance -= Number(newTx.amount);
+          if (newTx.type === 'income') newBalance += Number(newTx.amount);
+          return { ...acc, balance: newBalance };
+        }
+        return acc;
+      }));
+    } catch (error) {
+      console.error('Failed to add transaction:', error);
+      throw error;
+    }
   };
 
-  const updateAccount = (id: string, updates: Partial<Account>) => {
-    setAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, ...updates } : acc));
+  const updateAccount = async (id: string, updates: Partial<Account>) => {
+    try {
+      const updatedAcc = await fetchApi(`/api/accounts/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      setAccounts(prev => prev.map(acc => acc.id === id ? updatedAcc : acc));
+    } catch (error) {
+      console.error('Failed to update account:', error);
+      throw error;
+    }
   };
 
-  const addAccount = (accountData: Omit<Account, 'id'>) => {
-    const newAccount: Account = {
+  const addAccount = async (accountData: Omit<Account, 'id' | 'familyId'>) => {
+    if (!currentUser?.familyId) return;
+
+    const payload = {
       ...accountData,
-      id: Math.random().toString(36).substr(2, 9),
+      familyId: currentUser.familyId,
     };
-    setAccounts(prev => [...prev, newAccount]);
+
+    try {
+      const newAcc = await fetchApi('/api/accounts', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setAccounts(prev => [...prev, newAcc]);
+    } catch (error) {
+      console.error('Failed to add account:', error);
+      throw error;
+    }
   };
 
-  const updateCategoryLimit = (id: string, limit: number) => {
-    setCategories(prev => prev.map(cat => cat.id === id ? { ...cat, budgetLimit: limit } : cat));
+  const addCategory = async (categoryData: Omit<Category, 'id' | 'familyId'>) => {
+    if (!currentUser?.familyId) return;
+
+    const payload = {
+      ...categoryData,
+      familyId: currentUser.familyId,
+    };
+
+    try {
+      const newCategory = await fetchApi('/api/categories', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setCategories(prev => [...prev, newCategory]);
+    } catch (error) {
+      console.error('Failed to add category:', error);
+      throw error;
+    }
   };
 
-  const addRecurringPayment = (paymentData: Omit<RecurringPayment, 'id'>) => {
-    const newPayment: RecurringPayment = {
+  const updateCategoryLimit = async (id: string, limit: number) => {
+    try {
+      await fetchApi(`/api/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ budgetLimit: limit.toString() }),
+      });
+      setCategories(prev => prev.map(cat => cat.id === id ? { ...cat, budgetLimit: limit } : cat));
+    } catch (error) {
+      console.error('Failed to update category limit:', error);
+      throw error;
+    }
+  };
+
+  const addRecurringPayment = async (paymentData: Omit<RecurringPayment, 'id' | 'createdById'>) => {
+    if (!currentUser?.familyId) return;
+
+    const payload = {
       ...paymentData,
-      id: Math.random().toString(36).substr(2, 9),
+      familyId: currentUser.familyId,
+      createdById: currentUser.id,
     };
-    setRecurringPayments(prev => [...prev, newPayment]);
+
+    try {
+      const newPayment = await fetchApi('/api/recurring-payments', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      // Add createdByName to the payment for immediate display
+      const paymentWithUser = {
+        ...newPayment,
+        createdByName: currentUser ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username : 'Неизвестный'
+      };
+
+      setRecurringPayments(prev => [...prev, paymentWithUser]);
+    } catch (error) {
+      console.error('Failed to add recurring payment:', error);
+      throw error;
+    }
   };
 
-  const updateRecurringPayment = (id: string, updates: Partial<RecurringPayment>) => {
-    setRecurringPayments(prev => prev.map(rp => rp.id === id ? { ...rp, ...updates } : rp));
+  const updateRecurringPayment = async (id: string, updates: Partial<RecurringPayment>) => {
+    try {
+      const updatedPayment = await fetchApi(`/api/recurring-payments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      setRecurringPayments(prev => prev.map(rp => rp.id === id ? updatedPayment : rp));
+    } catch (error) {
+      console.error('Failed to update recurring payment:', error);
+      throw error;
+    }
   };
 
-  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
-    setTransactions(prev => prev.map(tx => tx.id === id ? { ...tx, ...updates } : tx));
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    try {
+      const updatedTx = await fetchApi(`/api/transactions/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      setTransactions(prev => prev.map(tx => tx.id === id ? updatedTx : tx));
+    } catch (error) {
+      console.error('Failed to update transaction:', error);
+      throw error;
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(tx => tx.id !== id));
+  const deleteTransaction = async (id: string) => {
+    try {
+      await fetchApi(`/api/transactions/${id}`, {
+        method: 'DELETE',
+      });
+      setTransactions(prev => prev.filter(tx => tx.id !== id));
+    } catch (error) {
+      console.error('Failed to delete transaction:', error);
+      throw error;
+    }
   };
 
-  const deleteAccount = (id: string) => {
-    setAccounts(prev => prev.filter(acc => acc.id !== id));
+  const deleteAccount = async (id: string) => {
+    try {
+      await fetchApi(`/api/accounts/${id}`, {
+        method: 'DELETE',
+      });
+      setAccounts(prev => prev.filter(acc => acc.id !== id));
+    } catch (error) {
+      console.error('Failed to delete account:', error);
+      throw error;
+    }
   };
 
-  const deleteRecurringPayment = (id: string) => {
-    setRecurringPayments(prev => prev.filter(rp => rp.id !== id));
+  const deleteRecurringPayment = async (id: string) => {
+    try {
+      await fetchApi(`/api/recurring-payments/${id}`, {
+        method: 'DELETE',
+      });
+      setRecurringPayments(prev => prev.filter(rp => rp.id !== id));
+    } catch (error) {
+      console.error('Failed to delete recurring payment:', error);
+      throw error;
+    }
   };
 
   return (
@@ -190,6 +375,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateAccount,
       deleteAccount,
       addAccount,
+      addCategory,
       updateCategoryLimit,
       addRecurringPayment,
       updateRecurringPayment,

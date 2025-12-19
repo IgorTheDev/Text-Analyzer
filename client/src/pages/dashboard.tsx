@@ -1,16 +1,58 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useData } from "@/lib/dataContext";
+import { useLocation } from "wouter";
 import { format, subDays } from "date-fns";
 import { ArrowUpRight, ArrowDownRight, DollarSign, Wallet, CreditCard, Activity } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { ru } from "date-fns/locale";
 
 export default function Dashboard() {
-  const { transactions, accounts, categories } = useData();
+  const { transactions, accounts, categories, currentUser } = useData();
+  const [, setLocation] = useLocation();
+
+  console.log('=== DASHBOARD COMPONENT RENDERED ===');
+  console.log('Dashboard рендерится, currentUser:', currentUser);
+  console.log('currentUser?.familyId:', currentUser?.familyId);
+  console.log('!currentUser?.familyId:', !currentUser?.familyId);
+
+  // If user has no family, show welcome message
+  if (!currentUser || !currentUser.familyId) {
+    console.log('Пользователь без семьи, показываем приветственное сообщение');
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Card className="w-full max-w-md text-center">
+            <CardHeader>
+              <CardTitle>Добро пожаловать в FamilyFinance!</CardTitle>
+              <CardDescription>
+                Чтобы начать управлять финансами, вам нужно создать семью или присоединиться к существующей.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Перейдите в раздел "Семья", чтобы создать новую семью или использовать код приглашения.
+              </p>
+              <Button
+                className="w-full"
+                onClick={() => {
+                  console.log('Кнопка "Перейти к семье" нажата');
+                  console.log('Текущий пользователь:', currentUser);
+                  setLocation('/family');
+                }}
+              >
+                Перейти к семье
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
 
   // Calculate real metrics
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
   const primaryCurrency = accounts.length > 0 ? accounts[0].currency : 'RUB';
   
   const currentMonth = new Date().getMonth();
@@ -23,23 +65,27 @@ export default function Dashboard() {
 
   const monthlyExpenses = monthlyTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const monthlyIncome = monthlyTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const savingsRate = monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
 
   // Chart data based on last 7 days transactions
   const chartData = Array.from({ length: 7 }).map((_, i) => {
     const d = subDays(new Date(), 6 - i);
-    const dayStr = format(d, "yyyy-MM-dd");
     const dayName = format(d, "EEE", { locale: ru });
-    
-    const dayTx = transactions.filter(t => t.date === dayStr);
-    const expenses = dayTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-    const income = dayTx.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+
+    // Filter transactions for this specific day
+    const dayTx = transactions.filter(t => {
+      const txDate = new Date(t.date);
+      return txDate.toDateString() === d.toDateString();
+    });
+
+    const expenses = dayTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+    const income = dayTx.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
 
     return {
       name: dayName,
@@ -105,7 +151,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-heading text-rose-600">
-                -{monthlyExpenses.toLocaleString()} {getCurrencySymbol(primaryCurrency)}
+                -{Number(monthlyExpenses).toFixed(2)} {getCurrencySymbol(primaryCurrency)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 12% меньше, чем в прошлом месяце
@@ -210,12 +256,12 @@ export default function Dashboard() {
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">{t.description}</p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(t.date), "d MMM", { locale: ru })} • {account?.name}
+                            {format(new Date(t.date), "d MMM", { locale: ru })} • {account?.name} • {(t as any).createdByName || 'Неизвестный'}
                           </p>
                         </div>
                       </div>
                       <div className={`font-medium text-sm ${isExpense ? 'text-foreground' : 'text-emerald-600'}`}>
-                        {isExpense ? '-' : '+'}{getCurrencySymbol(account?.currency || 'RUB')}{t.amount.toFixed(2)}
+                        {isExpense ? '-' : '+'}{getCurrencySymbol(account?.currency || 'RUB')}{Number(t.amount).toFixed(2)}
                       </div>
                     </div>
                   );

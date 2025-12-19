@@ -18,13 +18,21 @@ function ProtectedRoute({ component: Component, ...rest }: any) {
   const { currentUser } = useData();
   const [, setLocation] = useLocation();
 
+  console.log(`ProtectedRoute for ${Component.name}, currentUser:`, currentUser);
+
   useEffect(() => {
     if (!currentUser) {
+      console.log('No currentUser, redirecting to /auth');
       setLocation("/auth");
     }
   }, [currentUser, setLocation]);
 
-  if (!currentUser) return null;
+  if (!currentUser) {
+    console.log(`No currentUser, not rendering ${Component.name}`);
+    return null;
+  }
+
+  console.log(`Rendering ${Component.name}`);
   return <Component {...rest} />;
 }
 

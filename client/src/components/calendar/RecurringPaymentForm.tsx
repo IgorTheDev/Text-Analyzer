@@ -61,10 +61,9 @@ export function RecurringPaymentForm({ onSuccess, initialData }: Props) {
     }
   }, [initialData, form]);
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
       const paymentData = {
         name: values.name,
         amount: parseFloat(values.amount),
@@ -74,14 +73,29 @@ export function RecurringPaymentForm({ onSuccess, initialData }: Props) {
       };
 
       if (initialData) {
-        updateRecurringPayment(initialData.id, paymentData);
+        await updateRecurringPayment(initialData.id, paymentData);
+        toast({
+          title: "Платеж обновлен",
+          description: `Платеж "${values.name}" был успешно обновлен.`,
+        });
       } else {
-        addRecurringPayment(paymentData);
+        await addRecurringPayment(paymentData);
+        toast({
+          title: "Платеж создан",
+          description: `Платеж "${values.name}" был успешно создан.`,
+        });
       }
-      
-      setIsLoading(false);
+
       if (onSuccess) onSuccess();
-    }, 500);
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить платеж. Попробуйте еще раз.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -209,14 +223,22 @@ export function RecurringPaymentForm({ onSuccess, initialData }: Props) {
                   <AlertDialogCancel>Отмена</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive hover:bg-destructive/90"
-                    onClick={() => {
-                      deleteRecurringPayment(initialData.id);
-                      toast({
-                        title: "Платеж удален",
-                        description: `Регулярный платеж "${initialData.name}" был успешно удален.`,
-                        variant: "destructive"
-                      });
-                      if (onSuccess) onSuccess();
+                    onClick={async () => {
+                      try {
+                        await deleteRecurringPayment(initialData.id);
+                        toast({
+                          title: "Платеж удален",
+                          description: `Регулярный платеж "${initialData.name}" был успешно удален.`,
+                          variant: "destructive"
+                        });
+                        if (onSuccess) onSuccess();
+                      } catch (error) {
+                        toast({
+                          title: "Ошибка",
+                          description: "Не удалось удалить платеж. Попробуйте еще раз.",
+                          variant: "destructive"
+                        });
+                      }
                     }}
                   >
                     Удалить

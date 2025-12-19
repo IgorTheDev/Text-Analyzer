@@ -155,7 +155,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         className="bg-red-500 hover:bg-red-600"
                         onClick={async () => {
                           try {
-                            await fetchApi("/account/delete", {
+                            await fetchApi("/api/account/delete", {
                               method: "DELETE",
                               body: JSON.stringify({
                                 userId: currentUser?.id,

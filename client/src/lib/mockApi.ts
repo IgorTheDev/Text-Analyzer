@@ -1,4 +1,4 @@
-import { currentFamily, familyMembers, currentUser } from "./mockData";
+import { currentFamily, familyMembers, currentUser, type Family, type User } from "./mockData";
 
 // Mock user database - persists in memory for the session
 let registeredUsers: any[] = [];
@@ -67,7 +67,7 @@ export async function fetchMockApi(endpoint: string, options: RequestInit = {}) 
     const { userId, familyName } = JSON.parse(options.body as string);
 
     // Create new family
-    const newFamily = {
+    const newFamily: Family = {
       id: "f1",
       name: familyName,
       members: []

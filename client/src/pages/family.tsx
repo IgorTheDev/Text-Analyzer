@@ -36,7 +36,7 @@ export default function FamilyPage() {
       setLoading(true);
 
       // Get family members
-      const data = await fetchApi(`/families/${currentUser?.familyId}/members`);
+      const data = await fetchApi(`/api/families/${currentUser?.familyId}/members`);
       setFamily(data.family);
 
       // Show all family members including the current user
@@ -69,7 +69,7 @@ export default function FamilyPage() {
     try {
       // Save each pending role change
       for (const [memberId, newRole] of Object.entries(pendingRoleChanges)) {
-        await fetchApi(`/families/${currentUser?.familyId}/members/${memberId}`, {
+        await fetchApi(`/api/families/${currentUser?.familyId}/members/${memberId}`, {
           method: "PUT",
           body: JSON.stringify({ role: newRole }),
         });
@@ -100,13 +100,145 @@ export default function FamilyPage() {
     );
   }
 
-  // If user doesn't have family access, redirect to dashboard
+
+
+
+  // If user doesn't have a family yet, show create/join options
   if (!currentUser?.familyId) {
-    setLocation("/");
-    return null;
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/")}
+              className="gap-2"
+            >
+              <Home className="h-4 w-4" />
+              Главная
+            </Button>
+            <h1 className="text-3xl font-bold">Создать семью</h1>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Добро пожаловать в FamilyFinance!</CardTitle>
+              <CardDescription>
+                Чтобы начать управлять семейным бюджетом, вам нужно создать новую семью или присоединиться к существующей.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Create new family */}
+                <Card className="border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Создать новую семью</CardTitle>
+                    <CardDescription>Станьте администратором новой семьи</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button
+                      className="w-full"
+                      onClick={async () => {
+                        if (!currentUser) return;
+
+                        try {
+                          const familyName = prompt("Введите название семьи:");
+                          if (!familyName?.trim()) return;
+
+                          // Create family via API
+                          await fetchApi("/api/families", {
+                            method: "POST",
+                            body: JSON.stringify({
+                              name: familyName,
+                              userId: currentUser.id,
+                            }),
+                          });
+
+                          // Update user to have family
+                          const updatedUser = {
+                            id: currentUser.id,
+                            username: currentUser.username,
+                            firstName: currentUser.firstName,
+                            lastName: currentUser.lastName,
+                            familyId: "temp",
+                            role: "admin" as const
+                          };
+                          login(updatedUser);
+
+                          toast.success(`Семья "${familyName}" создана!`);
+                          setLocation("/");
+                        } catch (error) {
+                          toast.error("Ошибка создания семьи: " + (error instanceof Error ? error.message : "Unknown error"));
+                        }
+                      }}
+                    >
+                      Создать семью
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Join existing family */}
+                <Card className="border-primary/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Присоединиться к семье</CardTitle>
+                    <CardDescription>Используйте код приглашения</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Input
+                      placeholder="Введите код приглашения"
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={async () => {
+                        if (!currentUser) return;
+
+                        if (!joinCode.trim()) {
+                          toast.error("Пожалуйста, введите код приглашения");
+                          return;
+                        }
+
+                        try {
+                          // Try to join family using invitation code
+                          await fetchApi("/api/families/join", {
+                            method: "POST",
+                            body: JSON.stringify({
+                              userId: currentUser.id,
+                              invitationCode: joinCode,
+                            }),
+                          });
+
+                          toast.success("Вы успешно присоединились к семье!");
+                          // Refresh user data
+                          setLocation("/");
+                        } catch (error) {
+                          toast.error("Ошибка присоединения к семье: " + (error instanceof Error ? error.message : "Unknown error"));
+                        }
+                      }}
+                      disabled={!joinCode.trim()}
+                    >
+                      Присоединиться
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="text-center text-sm text-muted-foreground">
+                <p>Нужен код приглашения? Попросите администратора семьи сгенерировать его.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
-
+  // User has a family - show family management
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -222,7 +354,7 @@ export default function FamilyPage() {
                                       onClick={async () => {
                                         try {
                                           // Call API to remove member from family
-                                          await fetchApi("/families/leave", {
+                                          await fetchApi("/api/families/leave", {
                                             method: "POST",
                                             body: JSON.stringify({
                                               userId: member.id,
@@ -323,7 +455,7 @@ export default function FamilyPage() {
                   className="w-full"
                   onClick={async () => {
                     try {
-                      const response = await fetchApi(`/families/${currentUser?.familyId}/generate-invitation`, {
+                      const response = await fetchApi(`/api/families/${currentUser?.familyId}/generate-invitation`, {
                         method: "POST",
                         body: JSON.stringify({
                           invitedBy: currentUser?.id,

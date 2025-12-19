@@ -57,13 +57,12 @@ export function TransactionForm({ onSuccess, transaction }: { onSuccess?: () => 
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
       if (transaction) {
         // Update existing transaction
-        updateTransaction(transaction.id, {
+        await updateTransaction(transaction.id, {
           description: values.description,
           amount: parseFloat(values.amount),
           type: values.type,
@@ -73,7 +72,7 @@ export function TransactionForm({ onSuccess, transaction }: { onSuccess?: () => 
         });
       } else {
         // Add new transaction
-        addTransaction({
+        await addTransaction({
           description: values.description,
           amount: parseFloat(values.amount),
           type: values.type,
@@ -82,9 +81,12 @@ export function TransactionForm({ onSuccess, transaction }: { onSuccess?: () => 
           date: values.date,
         });
       }
-      setIsLoading(false);
       if (onSuccess) onSuccess();
-    }, 500);
+    } catch (error) {
+      console.error('Failed to save transaction:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   const type = form.watch("type");

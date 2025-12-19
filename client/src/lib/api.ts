@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000/api";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 export async function fetchApi(endpoint: string, options: RequestInit = {}) {
   // Now using real API instead of mock

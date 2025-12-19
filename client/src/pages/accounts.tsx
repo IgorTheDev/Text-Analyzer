@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
 export default function Accounts() {
-  const { accounts, addAccount, updateAccount, deleteAccount, transactions, categories } = useData();
+  const { accounts, addAccount, updateAccount, deleteAccount, transactions, categories, currentUser } = useData();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -60,26 +60,50 @@ export default function Accounts() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = () => {
-    const numBalance = parseFloat(balance);
-    if (editingAccount) {
-      updateAccount(editingAccount.id, {
-        name,
-        balance: isNaN(numBalance) ? 0 : numBalance,
-        type,
-        color
+  const handleSubmit = async () => {
+    if (!currentUser?.familyId) {
+      toast({
+        title: "Семья не найдена",
+        description: "Для создания счетов необходимо создать или присоединиться к семье.",
+        variant: "destructive"
       });
-    } else {
-              addAccount({
-                name,
-                balance: isNaN(numBalance) ? 0 : numBalance,
-                type,
-                currency: currency,
-                familyId: "f1",
-                color
-              });
+      return;
     }
-    setIsDialogOpen(false);
+
+    try {
+      const numBalance = parseFloat(balance);
+      if (editingAccount) {
+        await updateAccount(editingAccount.id, {
+          name,
+          balance: isNaN(numBalance) ? 0 : numBalance,
+          type,
+          color
+        });
+        toast({
+          title: "Счет обновлен",
+          description: `Счет "${name}" был успешно обновлен.`,
+        });
+      } else {
+        await addAccount({
+          name,
+          balance: isNaN(numBalance) ? 0 : numBalance,
+          type,
+          currency: currency,
+          color
+        });
+        toast({
+          title: "Счет создан",
+          description: `Счет "${name}" был успешно создан.`,
+        });
+      }
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить счет. Попробуйте еще раз.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -203,13 +227,21 @@ export default function Accounts() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Отмена</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => {
-                            deleteAccount(acc.id);
-                            toast({
-                              title: "Счет удален",
-                              description: `Счет "${acc.name}" был успешно удален.`,
-                              variant: "destructive"
-                            });
+                          <AlertDialogAction onClick={async () => {
+                            try {
+                              await deleteAccount(acc.id);
+                              toast({
+                                title: "Счет удален",
+                                description: `Счет "${acc.name}" был успешно удален.`,
+                                variant: "destructive"
+                              });
+                            } catch (error) {
+                              toast({
+                                title: "Ошибка",
+                                description: "Не удалось удалить счет. Попробуйте еще раз.",
+                                variant: "destructive"
+                              });
+                            }
                           }} className="bg-destructive hover:bg-destructive/90">
                             Удалить
                           </AlertDialogAction>
@@ -277,8 +309,8 @@ export default function Accounts() {
                                                           {t.type === 'expense' ? 'Расход' : t.type === 'income' ? 'Доход' : 'Перевод'}
                                                         </span>
                                       </TableCell>
-                                      <TableCell className={`text-right font-medium ${isExpense ? '' : 'text-emerald-600'}`}>
-                                                        {isExpense ? '-' : '+'}{getCurrencySymbol(acc.currency)}{t.amount.toFixed(2)}
+                    <TableCell className={`text-right font-medium ${isExpense ? '' : 'text-emerald-600'}`}>
+                                                        {isExpense ? '-' : '+'}{getCurrencySymbol(acc.currency)}{Number(t.amount).toFixed(2)}
                                       </TableCell>
                                     </TableRow>
                                   );
