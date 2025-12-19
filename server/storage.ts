@@ -29,6 +29,8 @@ export interface IStorage {
   getFamilyInvitationsByFamilyId(familyId: string): Promise<FamilyInvitation[]>;
   updateFamilyInvitation(id: string, updates: Partial<FamilyInvitation>): Promise<FamilyInvitation | undefined>;
   getFamilyInvitationByCode(invitationCode: string): Promise<FamilyInvitation | undefined>;
+  deleteFamilyInvitation(id: string): Promise<boolean>;
+  deleteFamilyInvitationsByInvitedBy(userId: string): Promise<number>;
 
   // Category operations
   createCategory(category: InsertCategory): Promise<Category>;
@@ -197,6 +199,23 @@ export class MemStorage implements IStorage {
     const updatedInvitation = { ...invitation, ...updates, updatedAt: new Date() };
     this.invitations.set(id, updatedInvitation);
     return updatedInvitation;
+  }
+
+  async deleteFamilyInvitation(id: string): Promise<boolean> {
+    return this.invitations.delete(id);
+  }
+
+  async deleteFamilyInvitationsByInvitedBy(userId: string): Promise<number> {
+    const invitationsToDelete = Array.from(this.invitations.values())
+      .filter(invitation => invitation.invitedBy === userId);
+
+    let deletedCount = 0;
+    for (const invitation of invitationsToDelete) {
+      if (this.invitations.delete(invitation.id)) {
+        deletedCount++;
+      }
+    }
+    return deletedCount;
   }
 
   // Category operations

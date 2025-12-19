@@ -85,6 +85,8 @@ export default function AuthPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('=== LOGIN BUTTON CLICKED ===');
+    console.log('Form data:', { username, password });
     try {
       // Basic validation
       if (!username.trim()) {
@@ -229,24 +231,24 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/20 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary/10 p-3 rounded-xl">
-              <Wallet className="h-10 w-10 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-muted/20 p-3 sm:p-4">
+      <Card className="w-full max-w-md shadow-lg mx-auto">
+        <CardHeader className="space-y-1 text-center pb-4">
+          <div className="flex justify-center mb-3">
+            <div className="bg-primary/10 p-2.5 sm:p-3 rounded-xl">
+              <Wallet className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold font-heading">FamilyFinance</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl font-bold font-heading">FamilyFinance</CardTitle>
+          <CardDescription className="text-sm">
             Управляйте семейным бюджетом вместе
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4" role="tablist" aria-label="Выбор формы аутентификации">
-              <TabsTrigger value="login" role="tab" aria-controls="login-panel">Вход</TabsTrigger>
-              <TabsTrigger value="register" role="tab" aria-controls="register-panel">Регистрация</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-4 h-10 sm:h-11" role="tablist" aria-label="Выбор формы аутентификации">
+              <TabsTrigger value="login" role="tab" aria-controls="login-panel" className="text-sm touch-target">Вход</TabsTrigger>
+              <TabsTrigger value="register" role="tab" aria-controls="register-panel" className="text-sm touch-target">Регистрация</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login">
@@ -280,7 +282,7 @@ export default function AuthPage() {
                     Запомнить меня
                   </Label>
                 </div>
-                <Button type="submit" className="w-full" size="lg">
+                <Button type="submit" className="w-full touch-target touch-feedback" size="lg">
                   Войти
                 </Button>
                 <div className="text-center">
@@ -401,7 +403,7 @@ export default function AuthPage() {
                     onChange={(e) => setInvitationCode(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full" size="lg">
+                <Button type="submit" className="w-full touch-target touch-feedback" size="lg">
                   Зарегистрироваться
                 </Button>
               </form>

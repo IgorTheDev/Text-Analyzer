@@ -211,4 +211,14 @@ export class PgStorage {
     const result = await db.delete(recurringPayments).where(eq(recurringPayments.createdById, userId)).returning();
     return result.length;
   }
+
+  async deleteFamilyInvitation(id: string): Promise<boolean> {
+    const result = await db.delete(familyInvitations).where(eq(familyInvitations.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deleteFamilyInvitationsByInvitedBy(userId: string): Promise<number> {
+    const result = await db.delete(familyInvitations).where(eq(familyInvitations.invitedBy, userId)).returning();
+    return result.length;
+  }
 }

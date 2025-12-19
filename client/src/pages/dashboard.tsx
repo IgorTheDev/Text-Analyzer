@@ -36,10 +36,21 @@ export default function Dashboard() {
               </p>
               <Button
                 className="w-full"
-                onClick={() => {
-                  console.log('Кнопка "Перейти к семье" нажата');
+                onClick={(e) => {
+                  alert('Кнопка нажата! Проверяем консоль...');
+                  console.log('=== КНОПКА "ПЕРЕЙТИ К СЕМЬЕ" НАЖАТА ===');
+                  console.log('Event:', e);
+                  console.log('Event type:', e.type);
                   console.log('Текущий пользователь:', currentUser);
-                  setLocation('/family');
+                  console.log('setLocation function:', typeof setLocation);
+                  try {
+                    setLocation('/family');
+                    console.log('setLocation called successfully');
+                    alert('setLocation вызван успешно');
+                  } catch (error) {
+                    console.error('Error calling setLocation:', error);
+                    alert('Ошибка: ' + (error instanceof Error ? error.message : 'Unknown error'));
+                  }
                 }}
               >
                 Перейти к семье
@@ -117,26 +128,26 @@ export default function Dashboard() {
         </div>
 
         {/* Key Metrics Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="hover:shadow-md transition-shadow">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+          <Card className="hover:shadow-md transition-shadow touch-feedback">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Общий баланс</CardTitle>
-              <DollarSign className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs sm:text-sm font-medium">Общий баланс</CardTitle>
+              <DollarSign className="h-4 w-4 text-primary flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-heading">{totalBalance.toLocaleString()} {getCurrencySymbol(primaryCurrency)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-heading truncate">{totalBalance.toLocaleString()} {getCurrencySymbol(primaryCurrency)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 +2.5% к прошлому месяцу
               </p>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="hover:shadow-md transition-shadow touch-feedback">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Доход за месяц</CardTitle>
-              <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+              <CardTitle className="text-xs sm:text-sm font-medium">Доход за месяц</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-emerald-500 flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-heading text-emerald-600">
+              <div className="text-lg sm:text-2xl font-bold font-heading text-emerald-600 truncate">
                 +{monthlyIncome.toLocaleString()} {getCurrencySymbol(primaryCurrency)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -144,13 +155,13 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="hover:shadow-md transition-shadow touch-feedback">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Расходы за месяц</CardTitle>
-              <ArrowDownRight className="h-4 w-4 text-rose-500" />
+              <CardTitle className="text-xs sm:text-sm font-medium">Расходы за месяц</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-rose-500 flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-heading text-rose-600">
+              <div className="text-lg sm:text-2xl font-bold font-heading text-rose-600 truncate">
                 -{Number(monthlyExpenses).toFixed(2)} {getCurrencySymbol(primaryCurrency)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -158,13 +169,13 @@ export default function Dashboard() {
               </p>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-md transition-shadow">
+          <Card className="hover:shadow-md transition-shadow touch-feedback">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Норма сбережений</CardTitle>
-              <Activity className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-xs sm:text-sm font-medium">Норма сбережений</CardTitle>
+              <Activity className="h-4 w-4 text-blue-500 flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-heading text-blue-600">
+              <div className="text-lg sm:text-2xl font-bold font-heading text-blue-600">
                 {savingsRate.toFixed(1)}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">

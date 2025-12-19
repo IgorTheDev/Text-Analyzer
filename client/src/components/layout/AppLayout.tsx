@@ -80,7 +80,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <Link key={item.href} href={item.href}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors cursor-pointer",
+                    "flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer touch-target touch-feedback",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -207,23 +207,41 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <main className="flex-1 md:ml-64 min-h-screen flex flex-col" role="main" aria-label="Основной контент">
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 border-b bg-card sticky top-0 z-40">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary/10 p-1.5 rounded-md">
+        <header className="md:hidden flex items-center justify-between p-3 border-b bg-card/95 backdrop-blur-sm sticky top-0 z-40">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="bg-primary/10 p-1.5 rounded-md flex-shrink-0">
               <Wallet className="h-5 w-5 text-primary" />
             </div>
-            <span className="font-heading font-bold text-lg">FamilyFinance</span>
+            <span className="font-heading font-bold text-lg truncate">FamilyFinance</span>
           </div>
-          <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-64">
-              <SidebarContent />
-            </SheetContent>
-          </Sheet>
+          <div className="flex items-center gap-2">
+            <Dialog open={isNewTxOpen} onOpenChange={setIsNewTxOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="touch-target touch-feedback h-9 w-9">
+                  <Plus className="h-5 w-5" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] mx-4">
+                <DialogHeader>
+                  <DialogTitle>Добавить операцию</DialogTitle>
+                  <DialogDescription>
+                    Добавить новый расход, доход или перевод.
+                  </DialogDescription>
+                </DialogHeader>
+                <TransactionForm onSuccess={handleTxSuccess} />
+              </DialogContent>
+            </Dialog>
+            <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="touch-target touch-feedback h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-72">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
+          </div>
         </header>
 
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full flex-1">

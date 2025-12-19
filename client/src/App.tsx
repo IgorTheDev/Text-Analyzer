@@ -14,6 +14,12 @@ import AuthPage from "@/pages/auth";
 import Family from "@/pages/family";
 import { useEffect } from "react";
 
+console.log('=== APP.TSX LOADED ===');
+console.log('UserAgent:', navigator.userAgent);
+console.log('Is mobile:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+
+
+
 function ProtectedRoute({ component: Component, ...rest }: any) {
   const { currentUser } = useData();
   const [, setLocation] = useLocation();

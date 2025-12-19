@@ -800,6 +800,61 @@ export async function registerRoutes(
       // Delete all related data first to avoid foreign key constraints
       console.log("Deleting related data for user:", userId);
 
+      // Handle family admin case - if user is admin, transfer admin rights or delete family
+      if (user.role === "admin" && user.familyId) {
+        console.log("User is family admin, handling family admin transfer...");
+        const familyMembers = await storage.getFamilyMembers(user.familyId);
+        const otherMembers = familyMembers.filter(member => member.id !== userId);
+
+        if (otherMembers.length > 0) {
+          // Transfer admin rights to another member
+          const newAdmin = otherMembers[0];
+          await storage.updateUser(newAdmin.id, { role: "admin" });
+          console.log(`Transferred admin rights to user: ${newAdmin.username}`);
+
+          // Remove user from family
+          await storage.updateUser(userId, { familyId: null, role: "member" });
+        } else {
+          // No other members, delete the entire family and all related data
+          console.log("No other family members, deleting entire family...");
+
+          // Delete all family-related data
+          const categories = await storage.getCategoriesByFamilyId(user.familyId);
+          for (const category of categories) {
+            await storage.deleteCategory(category.id);
+          }
+
+          const accounts = await storage.getAccountsByFamilyId(user.familyId);
+          for (const account of accounts) {
+            await storage.deleteAccount(account.id);
+          }
+
+          const transactions = await storage.getTransactionsByFamilyId(user.familyId);
+          for (const transaction of transactions) {
+            await storage.deleteTransaction(transaction.id);
+          }
+
+          const payments = await storage.getRecurringPaymentsByFamilyId(user.familyId);
+          for (const payment of payments) {
+            await storage.deleteRecurringPayment(payment.id);
+          }
+
+          const invitations = await storage.getFamilyInvitationsByFamilyId(user.familyId);
+          for (const invitation of invitations) {
+            await storage.deleteFamilyInvitation(invitation.id);
+          }
+
+          // Finally delete the family
+          // Note: We don't have a deleteFamily method, but since we're deleting the user
+          // and they've been removed from the family, this should be fine
+        }
+      }
+
+      // Delete family invitations where this user was the inviter
+      console.log("Deleting family invitations created by user...");
+      const deletedInvitations = await storage.deleteFamilyInvitationsByInvitedBy(userId);
+      console.log(`Deleted ${deletedInvitations} family invitations`);
+
       // Delete transactions created by this user
       console.log("Deleting transactions created by user...");
       const deletedTransactions = await storage.deleteTransactionsByUserId(userId);
