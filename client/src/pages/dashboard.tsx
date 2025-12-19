@@ -11,6 +11,7 @@ export default function Dashboard() {
 
   // Calculate real metrics
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const primaryCurrency = accounts.length > 0 ? accounts[0].currency : 'RUB';
   
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -50,6 +51,17 @@ export default function Dashboard() {
   const getCategory = (id?: string) => categories.find(c => c.id === id);
   const getAccount = (id: string) => accounts.find(a => a.id === id);
 
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'RUB': return '₽';
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'CNY': return '¥';
+      default: return currency;
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -66,7 +78,7 @@ export default function Dashboard() {
               <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-heading">{totalBalance.toLocaleString()} ₽</div>
+              <div className="text-2xl font-bold font-heading">{totalBalance.toLocaleString()} {getCurrencySymbol(primaryCurrency)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 +2.5% к прошлому месяцу
               </p>
@@ -79,7 +91,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-heading text-emerald-600">
-                +{monthlyIncome.toLocaleString()} ₽
+                +{monthlyIncome.toLocaleString()} {getCurrencySymbol(primaryCurrency)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 В планах на этот месяц
@@ -93,7 +105,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-heading text-rose-600">
-                -{monthlyExpenses.toLocaleString()} ₽
+                -{monthlyExpenses.toLocaleString()} {getCurrencySymbol(primaryCurrency)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 12% меньше, чем в прошлом месяце
@@ -203,7 +215,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className={`font-medium text-sm ${isExpense ? 'text-foreground' : 'text-emerald-600'}`}>
-                        {isExpense ? '-' : '+'}${t.amount.toFixed(2)}
+                        {isExpense ? '-' : '+'}{getCurrencySymbol(account?.currency || 'RUB')}{t.amount.toFixed(2)}
                       </div>
                     </div>
                   );
@@ -231,7 +243,7 @@ export default function Dashboard() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">{acc.name}</p>
                     <h3 className={`text-2xl font-bold font-heading ${acc.balance < 0 ? 'text-rose-600' : 'text-foreground'}`}>
-                      {acc.balance.toLocaleString()} ₽
+                      {acc.balance.toLocaleString()} {getCurrencySymbol(acc.currency)}
                     </h3>
                   </div>
                 </CardContent>

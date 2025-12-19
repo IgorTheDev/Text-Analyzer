@@ -9,16 +9,20 @@ import {
   Settings,
   Menu,
   LogOut,
-  Plus
+  Plus,
+  Users,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { currentUser } from "@/lib/mockData";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useData } from "@/lib/dataContext";
 import { useState } from "react";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
-import { useToast } from "@/hooks/use-toast";
+import { fetchApi } from "@/lib/api";
+import { toast } from "sonner";
 
 const navItems = [
   { label: "Главная", icon: LayoutDashboard, href: "/" },
@@ -26,20 +30,20 @@ const navItems = [
   { label: "Бюджет", icon: Wallet, href: "/budget" },
   { label: "Календарь", icon: CalendarDays, href: "/calendar" },
   { label: "Счета", icon: PieChart, href: "/accounts" },
+  { label: "Семья", icon: Users, href: "/family" },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
-  const { toast } = useToast();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { currentUser, logout } = useData();
+  const [, setLocation] = useLocation();
 
   const handleTxSuccess = () => {
     setIsNewTxOpen(false);
-    toast({
-      title: "Операция добавлена",
-      description: "Ваша операция была успешно сохранена.",
-    });
+    toast.success("Операция добавлена");
   };
 
   const SidebarContent = () => (
@@ -95,15 +99,98 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="mt-auto p-6 border-t border-sidebar-border">
         <div className="flex items-center gap-3 mb-4">
           <Avatar>
-            <AvatarImage src={currentUser.avatar} />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarImage src={currentUser?.avatar || ""} />
+            <AvatarFallback>{currentUser?.username?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{currentUser.username}</p>
-            <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+            <p className="text-sm font-medium truncate">{currentUser?.username || "User"}</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive">
+
+        <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground mb-2"
+            >
+              <User className="h-4 w-4" /> Профиль
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Настройки аккаунта</DialogTitle>
+              <DialogDescription>
+                Управление вашим аккаунтом и настройками
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Информация о пользователе</h4>
+                <div className="text-sm text-muted-foreground">
+                  <p>Имя пользователя: {currentUser?.username}</p>
+                  <p>Имя: {currentUser?.firstName} {currentUser?.lastName}</p>
+                  <p>Роль: {currentUser?.role === "admin" ? "Администратор" : "Участник"}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">Опасные действия</h4>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full">
+                      Удалить аккаунт
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Это действие нельзя отменить. Все ваши данные будут удалены, включая транзакции, счета и семейную информацию.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-red-500 hover:bg-red-600"
+                        onClick={async () => {
+                          try {
+                            await fetchApi("/account/delete", {
+                              method: "DELETE",
+                              body: JSON.stringify({
+                                userId: currentUser?.id,
+                              }),
+                            });
+
+                            toast.success("Ваш аккаунт успешно удален");
+                            setIsProfileOpen(false);
+                            logout();
+                            setLocation("/auth");
+                          } catch (error) {
+                            toast.error("Ошибка удаления аккаунта: " + (error instanceof Error ? error.message : "Unknown error"));
+                          }
+                        }}
+                      >
+                        Удалить аккаунт
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"
+          onClick={() => {
+            logout();
+            setLocation("/auth");
+            toast.success("Выход выполнен");
+          }}
+        >
           <LogOut className="h-4 w-4" /> Выйти
         </Button>
       </div>
@@ -113,12 +200,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:block w-64 fixed inset-y-0 z-50">
+      <aside className="hidden md:block w-64 fixed inset-y-0 z-50" role="navigation" aria-label="Основная навигация">
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 min-h-screen flex flex-col">
+      <main className="flex-1 md:ml-64 min-h-screen flex flex-col" role="main" aria-label="Основной контент">
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 border-b bg-card sticky top-0 z-40">
           <div className="flex items-center gap-2">

@@ -13,9 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { useData } from "@/lib/dataContext";
 import { RecurringPayment } from "@/lib/mockData";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(2, "Введите название"),
@@ -32,7 +34,8 @@ type Props = {
 
 export function RecurringPaymentForm({ onSuccess, initialData }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const { addRecurringPayment, updateRecurringPayment } = useData();
+  const { addRecurringPayment, updateRecurringPayment, deleteRecurringPayment } = useData();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -186,6 +189,43 @@ export function RecurringPaymentForm({ onSuccess, initialData }: Props) {
             initialData ? "Сохранить изменения" : "Добавить платеж"
           )}
         </Button>
+
+        {initialData && (
+          <div className="mt-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full gap-2">
+                  <Trash2 className="h-4 w-4" /> Удалить платеж
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Удалить регулярный платеж?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Это действие нельзя отменить. Все данные о платеже будут удалены.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Отмена</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive hover:bg-destructive/90"
+                    onClick={() => {
+                      deleteRecurringPayment(initialData.id);
+                      toast({
+                        title: "Платеж удален",
+                        description: `Регулярный платеж "${initialData.name}" был успешно удален.`,
+                        variant: "destructive"
+                      });
+                      if (onSuccess) onSuccess();
+                    }}
+                  >
+                    Удалить
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
       </form>
     </Form>
   );

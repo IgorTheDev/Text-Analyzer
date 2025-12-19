@@ -3,17 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useData } from "@/lib/dataContext";
-import { Pencil, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Pencil, AlertTriangle, CheckCircle2, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function Budget() {
   const { categories, transactions, updateCategoryLimit } = useData();
   const expenseCategories = categories.filter(c => c.type === 'expense');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [newLimit, setNewLimit] = useState<string>("");
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryType, setNewCategoryType] = useState("expense");
+  const [newCategoryColor, setNewCategoryColor] = useState("#3b82f6");
 
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -52,6 +58,62 @@ export default function Budget() {
             <h1 className="text-3xl font-heading font-bold text-foreground">Бюджет</h1>
             <p className="text-muted-foreground mt-1">Контроль ежемесячных лимитов.</p>
           </div>
+          <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" /> Добавить категорию
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Добавить категорию</DialogTitle>
+                <DialogDescription>
+                  Создайте новую категорию для отслеживания расходов.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Название</Label>
+                  <Input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder="Например: Продукты, Транспорт"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Тип</Label>
+                  <Select value={newCategoryType} onValueChange={setNewCategoryType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">Расход</SelectItem>
+                      <SelectItem value="income">Доход</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Цвет</Label>
+                  <div className="flex gap-2">
+                    {["#3b82f6", "#10b981", "#f59e0b", "#64748b", "#ef4444", "#8b5cf6", "#ec4899"].map(c => (
+                      <button
+                        key={c}
+                        className={`w-6 h-6 rounded-full border-2 ${newCategoryColor === c ? 'border-foreground' : 'border-transparent'}`}
+                        style={{ backgroundColor: c }}
+                        onClick={() => setNewCategoryColor(c)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <Button onClick={() => {
+                  toast.success(`Категория "${newCategoryName}" добавлена`);
+                  setIsAddCategoryOpen(false);
+                }}>
+                  Добавить категорию
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

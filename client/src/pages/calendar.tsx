@@ -17,7 +17,7 @@ export default function Calendar() {
   const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ type: 'payment' | 'transaction', data: RecurringPayment | Transaction } | null>(null);
   const { toast } = useToast();
-  const { transactions, recurringPayments } = useData();
+  const { transactions, recurringPayments, deleteRecurringPayment } = useData();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);

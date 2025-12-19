@@ -1,0 +1,36 @@
+{
+  "name": "FamilyFinance - Управление семейным бюджетом",
+  "short_name": "FamilyFinance",
+  "description": "Управление семейным бюджетом вместе с членами семьи",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "productivity", "lifestyle"],
+  "lang": "ru",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Добавить транзакцию",
+      "short_name": "Новая операция",
+      "description": "Быстро добавить новую транзакцию",
+      "url": "/?action=new-transaction",
+      "icons": [{ "src": "/favicon.png", "sizes": "32x32" }]
+    },
+    {
+      "name": "Просмотр бюджета",
+      "short_name": "Бюджет",
+      "description": "Посмотреть текущий бюджет",
+      "url": "/budget",
+      "icons": [{ "src": "/favicon.png", "sizes": "32x32" }]
+    }
+  ]
+}

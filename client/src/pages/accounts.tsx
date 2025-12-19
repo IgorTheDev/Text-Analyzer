@@ -1,7 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useData } from "@/lib/dataContext";
-import { Wallet, CreditCard, Landmark, DollarSign, Plus, Pencil } from "lucide-react";
+import { Wallet, CreditCard, Landmark, DollarSign, Plus, Pencil, Trash2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,33 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { Account, AccountType } from "@/lib/mockData";
+import { toast } from "sonner";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 
 export default function Accounts() {
-  const { accounts, addAccount, updateAccount } = useData();
+  const { accounts, addAccount, updateAccount, deleteAccount, transactions, categories } = useData();
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
-  
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
+  const [currency, setCurrency] = useState("RUB");
+  const [historyAccount, setHistoryAccount] = useState<Account | null>(null);
+
+  const getCurrencySymbol = (currency: string) => {
+    switch (currency) {
+      case 'RUB': return '₽';
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'CNY': return '¥';
+      default: return currency;
+    }
+  };
+
   // Form state
   const [name, setName] = useState("");
   const [balance, setBalance] = useState("");
@@ -49,14 +70,14 @@ export default function Accounts() {
         color
       });
     } else {
-      addAccount({
-        name,
-        balance: isNaN(numBalance) ? 0 : numBalance,
-        type,
-        currency: "RUB",
-        familyId: "f1",
-        color
-      });
+              addAccount({
+                name,
+                balance: isNaN(numBalance) ? 0 : numBalance,
+                type,
+                currency: currency,
+                familyId: "f1",
+                color
+              });
     }
     setIsDialogOpen(false);
   };
@@ -89,8 +110,23 @@ export default function Accounts() {
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Например: Основной, Наличные" />
               </div>
               <div className="space-y-2">
-                <Label>Баланс (₽)</Label>
+                <Label>Баланс ({currency})</Label>
                 <Input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Валюта</Label>
+                <Select value={currency} onValueChange={setCurrency}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RUB">Рубль (RUB)</SelectItem>
+                    <SelectItem value="USD">Доллар (USD)</SelectItem>
+                    <SelectItem value="EUR">Евро (EUR)</SelectItem>
+                    <SelectItem value="GBP">Фунт (GBP)</SelectItem>
+                    <SelectItem value="CNY">Юань (CNY)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Тип</Label>
@@ -148,19 +184,115 @@ export default function Accounts() {
                         {acc.type === 'investment' && 'Инвестиционный'}
                     </CardDescription>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(acc)}>
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(acc)}>
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Удалить счет?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Это действие нельзя отменить. Все транзакции, связанные с этим счетом, будут удалены.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Отмена</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => {
+                            deleteAccount(acc.id);
+                            toast({
+                              title: "Счет удален",
+                              description: `Счет "${acc.name}" был успешно удален.`,
+                              variant: "destructive"
+                            });
+                          }} className="bg-destructive hover:bg-destructive/90">
+                            Удалить
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="mt-4">
                     <p className="text-sm text-muted-foreground">Текущий баланс</p>
                     <h3 className={`text-3xl font-heading font-bold ${acc.balance < 0 ? 'text-rose-600' : 'text-foreground'}`}>
-                      {acc.balance.toLocaleString()} ₽
+                      {acc.balance.toLocaleString()} {getCurrencySymbol(acc.currency)}
                     </h3>
                   </div>
                   <div className="mt-6 flex gap-2">
-                    <Button variant="outline" size="sm" className="w-full">История</Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full" onClick={() => setHistoryAccount(acc)}>
+                          <History className="h-4 w-4 mr-2" /> История
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                          <DialogTitle>История транзакций: {acc.name}</DialogTitle>
+                          <DialogDescription>
+                            Все транзакции, связанные с этим счетом
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="max-h-[60vh] overflow-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Дата</TableHead>
+                                <TableHead>Описание</TableHead>
+                                <TableHead>Категория</TableHead>
+                                <TableHead>Тип</TableHead>
+                                <TableHead className="text-right">Сумма</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {transactions
+                                .filter(t => t.accountId === acc.id)
+                                .map((t) => {
+                                  const category = categories.find(c => c.id === t.categoryId);
+                                  const isExpense = t.type === 'expense';
+
+                                  return (
+                                    <TableRow key={t.id}>
+                                      <TableCell className="font-medium text-muted-foreground">
+                                        {format(new Date(t.date), "d MMM yyyy", { locale: ru })}
+                                      </TableCell>
+                                      <TableCell className="font-medium">{t.description}</TableCell>
+                                      <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                          <div
+                                                            className="w-2 h-2 rounded-full"
+                                                            style={{ backgroundColor: category?.color || '#94a3b8' }}
+                                                          />
+                                                          <span className="text-sm">{category?.name || 'Без категории'}</span>
+                                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                                        <span className={`px-2 py-1 rounded-full text-xs ${t.type === 'expense' ? 'bg-red-100 text-red-800' : t.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                                                          {t.type === 'expense' ? 'Расход' : t.type === 'income' ? 'Доход' : 'Перевод'}
+                                                        </span>
+                                      </TableCell>
+                                      <TableCell className={`text-right font-medium ${isExpense ? '' : 'text-emerald-600'}`}>
+                                                        {isExpense ? '-' : '+'}{getCurrencySymbol(acc.currency)}{t.amount.toFixed(2)}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                            </TableBody>
+                          </Table>
+                          {transactions.filter(t => t.accountId === acc.id).length === 0 && (
+                            <div className="py-8 text-center text-muted-foreground">
+                              Нет транзакций для этого счета
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </CardContent>
               </Card>

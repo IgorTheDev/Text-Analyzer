@@ -1,7 +1,13 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+
+console.log("Starting server...");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("DATABASE_URL from env:", process.env.DATABASE_URL);
 
 const app = express();
 const httpServer = createServer(app);
@@ -21,6 +27,12 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Enable CORS
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true
+}));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -84,12 +96,11 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = parseInt(process.env.PORT || (process.env.NODE_ENV === "development" ? "4000" : "5000"), 10);
   httpServer.listen(
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
     },
     () => {
       log(`serving on port ${port}`);

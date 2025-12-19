@@ -11,6 +11,7 @@ import Budget from "@/pages/budget";
 import Accounts from "@/pages/accounts";
 import Calendar from "@/pages/calendar";
 import AuthPage from "@/pages/auth";
+import Family from "@/pages/family";
 import { useEffect } from "react";
 
 function ProtectedRoute({ component: Component, ...rest }: any) {
@@ -45,6 +46,9 @@ function Router() {
       </Route>
       <Route path="/accounts">
         <ProtectedRoute component={Accounts} />
+      </Route>
+      <Route path="/family">
+        <ProtectedRoute component={Family} />
       </Route>
       <Route component={NotFound} />
     </Switch>

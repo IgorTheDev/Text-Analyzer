@@ -6,19 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useData } from "@/lib/dataContext";
 import { format } from "date-fns";
-import { Search, Filter, Download, Plus } from "lucide-react";
+import { Search, Filter, Download, Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TransactionForm } from "@/components/transactions/TransactionForm";
 import { useToast } from "@/hooks/use-toast";
 import { ru } from "date-fns/locale";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const { toast } = useToast();
-  const { transactions, categories, accounts } = useData();
+  const { transactions, categories, accounts, deleteTransaction } = useData();
 
   const handleTxSuccess = () => {
     setIsNewTxOpen(false);
@@ -58,12 +60,12 @@ export default function Transactions() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>Добавить операцию</DialogTitle>
+                  <DialogTitle>{editingTransaction ? "Редактировать операцию" : "Добавить операцию"}</DialogTitle>
                   <DialogDescription>
-                    Добавить новый расход, доход или перевод.
+                    {editingTransaction ? "Редактировать существующую операцию." : "Добавить новый расход, доход или перевод."}
                   </DialogDescription>
                 </DialogHeader>
-                <TransactionForm onSuccess={handleTxSuccess} />
+                <TransactionForm onSuccess={handleTxSuccess} transaction={editingTransaction} />
               </DialogContent>
             </Dialog>
           </div>
@@ -119,25 +121,75 @@ export default function Transactions() {
                     const isExpense = t.type === 'expense';
                     
                     return (
-                      <TableRow key={t.id} className="group hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-medium text-muted-foreground">
-                          {format(new Date(t.date), "d MMM yyyy", { locale: ru })}
-                        </TableCell>
-                        <TableCell className="font-medium">{t.description}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-2 h-2 rounded-full" 
-                              style={{ backgroundColor: category?.color || '#94a3b8' }}
-                            />
-                            <span className="text-sm">{category?.name || 'Без категории'}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{account?.name}</TableCell>
-                        <TableCell className={`text-right font-medium ${isExpense ? '' : 'text-emerald-600'}`}>
-                          {isExpense ? '-' : '+'}${t.amount.toFixed(2)}
-                        </TableCell>
-                      </TableRow>
+                  <TableRow key={t.id} className="group hover:bg-muted/50 transition-colors">
+                    <TableCell className="font-medium text-muted-foreground">
+                      {format(new Date(t.date), "d MMM yyyy", { locale: ru })}
+                    </TableCell>
+                    <TableCell className="font-medium">{t.description}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{ backgroundColor: category?.color || '#94a3b8' }}
+                        />
+                        <span className="text-sm">{category?.name || 'Без категории'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{account?.name}</TableCell>
+                    <TableCell className={`text-right font-medium ${isExpense ? '' : 'text-emerald-600'}`}>
+                      {isExpense ? '-' : '+'}{account?.currency === 'RUB' ? '₽' : '$'}{t.amount.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            setEditingTransaction(t);
+                            setIsNewTxOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить операцию</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Вы уверены, что хотите удалить эту операцию? Это действие нельзя отменить.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-500 hover:bg-red-600"
+                                onClick={() => {
+                                  deleteTransaction(t.id);
+                                  toast({
+                                    title: "Операция удалена",
+                                    description: "Ваша операция была успешно удалена.",
+                                    variant: "destructive"
+                                  });
+                                }}
+                              >
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                     );
                   })
                 ) : (
